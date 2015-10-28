@@ -160,7 +160,7 @@
     protected function is_letter()
     {
       if(ord($this->char) >= 65 && ord($this->char) <= 90) return TRUE;
-      if(ord($this->char) >= 90 && ord($this->char) <= 122) return TRUE;
+      if(ord($this->char) >= 97 && ord($this->char) <= 122) return TRUE;
       return FALSE;
     }
  
@@ -180,6 +180,7 @@
     {
       $this->GetChar();
       $word = "";
+
       while($this->is_letter())
       {
         $word .= $this->char;
