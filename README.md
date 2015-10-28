@@ -13,7 +13,7 @@ Include the file rtf-html-php.php somewhere in your project. Then do this:
     $rtf = file_get_contents("test.rtf"); // or use a string
     $reader->Parse($rtf);
 
-If you’d like to see what the parser read, then call this:
+If you’d like to see what the parser read (for debug purposes), then call this:
 
     $reader->root->dump();
 
@@ -22,7 +22,11 @@ To convert the parser’s parse tree to HTML, call this:
     $formatter = new RtfHtml();
     echo $formatter->Format($reader->root);
 
-## Update 3 Sep ’14:
+
+#### Update 28 Oct '15:
+ * A bug causing control words to be misparsed occasionally is now fixed.
+
+#### Update 3 Sep ’14:
 
 * Fixed bug: underlining would start but never end. Now it does.
 * Feature request: images are now filtered out of the output.

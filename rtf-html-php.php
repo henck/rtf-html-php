@@ -15,7 +15,7 @@
    * Sample of use:
    * 
    * $reader = new RtfReader();
-   * $rtf = file_get_contents("itc.rtf"); // or use a string
+   * $rtf = file_get_contents("test.rtf"); // or use a string
    * $reader->Parse($rtf);
    * //$reader->root->dump(); // to see what the reader read
    * $formatter = new RtfHtml();
