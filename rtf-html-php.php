@@ -299,7 +299,10 @@
         if(!$terminate && !$escape)
         {
           $text .= $this->char;
-          $this->GetChar();
+
+          //check that we aren't going to go past the end of the string.
+          if($this->pos+1 < $this->len)
+            $this->GetChar();
         }
       }
       while(!$terminate && $this->pos < $this->len);
