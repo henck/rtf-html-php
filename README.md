@@ -22,6 +22,11 @@ To convert the parser’s parse tree to HTML, call this:
     $formatter = new RtfHtml();
     echo $formatter->Format($reader->root);
 
+## Install via Composer
+
+```
+composer require henke/rtf-to-html
+```
 
 #### Update 28 Oct '15:
  * A bug causing control words to be misparsed occasionally is now fixed.
