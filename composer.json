@@ -1,0 +1,17 @@
+{
+    "name": "henck/rtf-to-html",
+    "description": "RTF to HTML converter in PHP",
+    "keywords": ["rtf", "converter"],
+    "type": "library",
+    "license": "GPL-2.0",
+    "authors": [
+        {
+            "name": "Alexander van Oostenrijk",
+            "email": "alex.vanoostenrijk@gmail.com"
+        }
+    ],
+    "require": {},
+    "autoload": {
+        "classmap": ["rtf-html-php.php"]
+    }
+}
