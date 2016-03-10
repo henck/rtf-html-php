@@ -266,7 +266,7 @@
       // Parse plain text up to backslash or brace,
       // unless escaped.
       $text = "";
- 
+
       do
       {
         $terminate = false;
@@ -281,8 +281,8 @@
           switch($this->char)
           {
             case '\\': $text .= '\\'; break;
-            case '{': $text .= '{'; break;
-            case '}': $text .= '}'; break;
+            case '{':  $text .= '{';  break;
+            case '}':  $text .= '}';  break;
             default:
               // Not an escape. Roll back.
               $this->pos = $this->pos - 2;
@@ -299,51 +299,64 @@
         if(!$terminate && !$escape)
         {
           $text .= $this->char;
-
-          //check that we aren't going to go past the end of the string.
-          if($this->pos+1 < $this->len)
-            $this->GetChar();
+          $this->GetChar();
         }
       }
       while(!$terminate && $this->pos < $this->len);
  
       $rtftext = new RtfText();
       $rtftext->text = $text;
+
+      // If group does not exist, then this is not a valid RTF file. Throw an exception.
+      if($this->group == NULL) {
+        throw new Exception();
+      }
+
       array_push($this->group->children, $rtftext);
     }
  
+    /*
+     * Attempt to parse an RTF string. Parsing returns TRUE on success or FALSE on failure
+     */
     public function Parse($rtf)
     {
-      $this->rtf = $rtf;
-      $this->pos = 0;
-      $this->len = strlen($this->rtf);
-      $this->group = null;
-      $this->root = null;
- 
-      while($this->pos < $this->len)
-      {
-        // Read next character:
-        $this->GetChar();
- 
-        // Ignore \r and \n
-        if($this->char == "\n" || $this->char == "\r") continue;
- 
-        // What type of character is this?
-        switch($this->char)
+      try {
+        $this->rtf = $rtf;
+        $this->pos = 0;
+        $this->len = strlen($this->rtf);
+        $this->group = null;
+        $this->root = null;
+
+        while($this->pos < $this->len)
         {
-          case '{':
-            $this->ParseStartGroup();
-            break;
-          case '}':
-            $this->ParseEndGroup();
-            break;
-          case '\\':
-            $this->ParseControl();
-            break;
-          default:
-            $this->ParseText();
-            break;
+          // Read next character:
+          $this->GetChar();
+
+          // Ignore \r and \n
+          if($this->char == "\n" || $this->char == "\r") continue;
+
+          // What type of character is this?
+          switch($this->char)
+          {
+            case '{':
+              $this->ParseStartGroup();
+              break;
+            case '}':
+              $this->ParseEndGroup();
+              break;
+            case '\\':
+              $this->ParseControl();
+              break;
+            default:
+              $this->ParseText();
+              break;
+          }
         }
+
+        return TRUE;
+      }
+      catch(Exception $ex) {
+        return FALSE;
       }
     }
   }
