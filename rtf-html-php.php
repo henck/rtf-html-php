@@ -481,4 +481,17 @@
       $this->EndState();
     }
   }
-?>
+
+  if (__FILE__ === realpath($_SERVER['SCRIPT_NAME']) && php_sapi_name() === 'cli') {
+    if (isset($_SERVER['argv'][1]) && ($_SERVER['argv'][1] !== '-')) {
+      $file = $_SERVER['argv'][1];
+    } else {
+      $file = 'php://stdin';
+    }
+
+    $reader = new RtfReader();
+    $rtf = file_get_contents($file);
+    $reader->Parse($rtf);
+    $formatter = new RtfHtml();
+    echo $formatter->Format($reader->root);
+  }
