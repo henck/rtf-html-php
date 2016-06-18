@@ -47,7 +47,7 @@
       if(sizeof($this->children) == 0) return null;
       // First child not a control word?
       $child = $this->children[0];
-      if(get_class($child) != "RtfControlWord") return null;
+      if(!$child instanceof RtfControlWord) return null;
       return $child->word;
     }    
  
@@ -57,7 +57,7 @@
       if(sizeof($this->children) == 0) return null;
       // First child not a control symbol?
       $child = $this->children[0];
-      if(get_class($child) != "RtfControlSymbol") return null;
+      if(!$child instanceof RtfControlSymbol) return null;
       return $child->symbol == '*';
     }
  
@@ -70,7 +70,7 @@
  
       foreach($this->children as $child)
       {
-        if(get_class($child) == "RtfGroup")
+        if($child instanceof RtfGroup)
         {
           if ($child->GetType() == "fonttbl") continue;
           if ($child->GetType() == "colortbl") continue;
@@ -398,9 +398,9 @@
     {
       // Can we ignore this group?
       if ($group->GetType() == "fonttbl") return;
-      if ($group->GetType() == "colortbl") return;
-      if ($group->GetType() == "stylesheet") return;
-      if ($group->GetType() == "info") return;
+      elseif ($group->GetType() == "colortbl") return;
+      elseif ($group->GetType() == "stylesheet") return;
+      elseif ($group->GetType() == "info") return;
       // Skip any pictures:
       if (substr($group->GetType(), 0, 4) == "pict") return;
       if ($group->IsDestination()) return;
@@ -411,10 +411,10 @@
  
       foreach($group->children as $child)
       {
-        if(get_class($child) == "RtfGroup") $this->FormatGroup($child);
-        if(get_class($child) == "RtfControlWord") $this->FormatControlWord($child);
-        if(get_class($child) == "RtfControlSymbol") $this->FormatControlSymbol($child);
-        if(get_class($child) == "RtfText") $this->FormatText($child);
+        if($child instanceof RtfGroup) $this->FormatGroup($child);
+        elseif($child instanceof RtfControlWord) $this->FormatControlWord($child);
+        elseif($child instanceof RtfControlSymbol) $this->FormatControlSymbol($child);
+        elseif($child instanceof RtfText) $this->FormatText($child);
       }
  
       // Pop state from stack.
@@ -425,25 +425,25 @@
     protected function FormatControlWord($word)
     {
       if($word->word == "plain") $this->state->Reset();
-      if($word->word == "b") $this->state->bold = $word->parameter;
-      if($word->word == "i") $this->state->italic = $word->parameter;
-      if($word->word == "ul") $this->state->underline = $word->parameter;
-      if($word->word == "ulnone") $this->state->end_underline = $word->parameter;
-      if($word->word == "strike") $this->state->strike = $word->parameter;
-      if($word->word == "v") $this->state->hidden = $word->parameter;
-      if($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16);
+      elseif($word->word == "b") $this->state->bold = $word->parameter;
+      elseif($word->word == "i") $this->state->italic = $word->parameter;
+      elseif($word->word == "ul") $this->state->underline = $word->parameter;
+      elseif($word->word == "ulnone") $this->state->end_underline = $word->parameter;
+      elseif($word->word == "strike") $this->state->strike = $word->parameter;
+      elseif($word->word == "v") $this->state->hidden = $word->parameter;
+      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16);
  
-      if($word->word == "par") $this->output .= "<p>";
+      elseif($word->word == "par") $this->output .= "<p>";
  
       // Characters:
-      if($word->word == "lquote") $this->output .= "&lsquo;";
-      if($word->word == "rquote") $this->output .= "&rsquo;";
-      if($word->word == "ldblquote") $this->output .= "&ldquo;";
-      if($word->word == "rdblquote") $this->output .= "&rdquo;";
-      if($word->word == "emdash") $this->output .= "&mdash;";
-      if($word->word == "endash") $this->output .= "&ndash;";
-      if($word->word == "bullet") $this->output .= "&bull;";
-      if($word->word == "u") $this->output .= "&loz;";
+      elseif($word->word == "lquote") $this->output .= "&lsquo;";
+      elseif($word->word == "rquote") $this->output .= "&rsquo;";
+      elseif($word->word == "ldblquote") $this->output .= "&ldquo;";
+      elseif($word->word == "rdblquote") $this->output .= "&rdquo;";
+      elseif($word->word == "emdash") $this->output .= "&mdash;";
+      elseif($word->word == "endash") $this->output .= "&ndash;";
+      elseif($word->word == "bullet") $this->output .= "&bull;";
+      elseif($word->word == "u") $this->output .= "&loz;";
     }
  
     protected function BeginState()
