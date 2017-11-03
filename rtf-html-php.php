@@ -216,16 +216,17 @@
         // hexadecimal value \'hh then jump over it
         if($this->char == '\\' && $this->rtf[$this->pos]=='\'')
             $this->pos = $this->pos + 3;
-                
-        // skip the remaining ANSI replacement character
-        $this->GetChar();               
+                 
       }
       // If the current character is a space, then
       // it is a delimiter. It is consumed.
       // If it's not a space, then it's part of the next
       // item in the text, so put the character back.
-      if($this->char != ' ') $this->pos--; 
-       
+      else
+      {
+        if($this->char != ' ') $this->pos--;  
+      }
+             
       $rtfword = new RtfControlWord();
       $rtfword->word = $word;
       $rtfword->parameter = $parameter;
