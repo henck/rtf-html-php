@@ -209,16 +209,23 @@
       // a character.
       if($word == "u") 
       {
+        // Ignore space delimiter
+        if ($this->char==' ') $this->GetChar();
+        
+        // if the replacement character is encoded as
+        // hexadecimal value \'hh then jump over it
+        if($this->char == '\\' && $this->rtf[$this->pos]=='\'')
+            $this->pos = $this->pos + 3;
+                
+        // skip the remaining ANSI replacement character
+        $this->GetChar();               
       }
       // If the current character is a space, then
       // it is a delimiter. It is consumed.
       // If it's not a space, then it's part of the next
       // item in the text, so put the character back.
-      else
-      {
-        if($this->char != ' ') $this->pos--; 
-      }
- 
+      if($this->char != ' ') $this->pos--; 
+       
       $rtfword = new RtfControlWord();
       $rtfword->word = $word;
       $rtfword->parameter = $parameter;
@@ -443,7 +450,12 @@
       elseif($word->word == "emdash") $this->output .= "&mdash;";
       elseif($word->word == "endash") $this->output .= "&ndash;";
       elseif($word->word == "bullet") $this->output .= "&bull;";
-      elseif($word->word == "u") $this->output .= "&loz;";
+      elseif($word->word == "u") 
+      {
+          $this->BeginState();
+          $this->output .= '&#'.$word->parameter.';';
+          $this->EndState();
+      }
     }
  
     protected function BeginState()
