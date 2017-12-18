@@ -216,7 +216,9 @@
         // hexadecimal value \'hh then jump over it
         if($this->char == '\\' && $this->rtf[$this->pos]=='\'')
             $this->pos = $this->pos + 3;
-                 
+        
+        // Convert to UTF unsigned decimal code
+        if($negative) $parameter = 65536 + $parameter;                 
       }
       // If the current character is a space, then
       // it is a delimiter. It is consumed.
@@ -393,6 +395,9 @@
     public function Format($root)
     {
       $this->output = "";
+      // Keeping track of style modifications
+      $this->previousState = null;
+      $this->openedTags = array('span' => False, 'p' => False);
       // Create a stack of states:
       $this->states = array();
       // Put an initial standard state onto the stack:
@@ -441,7 +446,18 @@
       elseif($word->word == "v") $this->state->hidden = $word->parameter;
       elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16);
  
-      elseif($word->word == "par") $this->output .= "<p>";
+      elseif($word->word == "par")
+      {
+        // close previously opened 'span' tag
+        $this->CloseTag();
+        // decide whether to open or to close a 'p' tag
+        if ($this->openedTags["p"]) $this->CloseTag("p");
+        else
+        {
+          $this->output .= "<p>";
+          $this->openedTags['p'] = True;
+        }
+      }
  
       // Characters:
       elseif($word->word == "lquote") $this->output .= "&lsquo;";
@@ -451,47 +467,55 @@
       elseif($word->word == "emdash") $this->output .= "&mdash;";
       elseif($word->word == "endash") $this->output .= "&ndash;";
       elseif($word->word == "bullet") $this->output .= "&bull;";
-      elseif($word->word == "u") 
+      // Print Unicode character
+      elseif($word->word == "u")
+        $this->ApplyStyle("&#" . $word->parameter . ";");
+    }
+ 
+    protected function ApplyStyle($txt)
+    {
+      // create span only when a style change occur
+      if ($this->previousState != $this->state)
       {
-          $this->BeginState();
-          $this->output .= '&#'.$word->parameter.';';
-          $this->EndState();
+        $span = "";
+        if($this->state->bold) $span .= "font-weight:bold;";
+        if($this->state->italic) $span .= "font-style:italic;";
+        if($this->state->underline) $span .= "text-decoration:underline;";
+        if($this->state->end_underline) $span .= "text-decoration:none;";
+        if($this->state->strike) $span .= "text-decoration:strikethrough;";
+        if($this->state->hidden) $span .= "display:none;";
+        if($this->state->fontsize != 0) $span .= "font-size: {$this->state->fontsize}px;";
+        
+        // Keep track of preceding style
+        $this->previousState = clone $this->state;
+        
+        // close previously opened 'span' tag
+        $this->CloseTag();
+        
+        $this->output .= "<span style=\"{$span}\">" . $txt;
+        $this->openedTags["span"] = True;
       }
+      else $this->output .= $txt;
     }
  
-    protected function BeginState()
+    protected function CloseTag($tag = "span")
     {
-      $span = "";
-      if($this->state->bold) $span .= "font-weight:bold;";
-      if($this->state->italic) $span .= "font-style:italic;";
-      if($this->state->underline) $span .= "text-decoration:underline;";
-      if($this->state->end_underline) $span .= "text-decoration:none;";
-      if($this->state->strike) $span .= "text-decoration:strikethrough;";
-      if($this->state->hidden) $span .= "display:none;";
-      if($this->state->fontsize != 0) $span .= "font-size: {$this->state->fontsize}px;";
-      $this->output .= "<span style='{$span}'>";
-    }
- 
-    protected function EndState()
-    {
-      $this->output .= "</span>";
+      if ($this->openedTags[$tag])
+      {
+        $this->output .= "</{$tag}>";
+        $this->openedTags[$tag] = False;
+      }
     }
  
     protected function FormatControlSymbol($symbol)
     {
       if($symbol->symbol == '\'')
-      {
-        $this->BeginState();
-        $this->output .= htmlentities(chr($symbol->parameter), ENT_QUOTES, 'ISO-8859-1');
-        $this->EndState();
-      }
+        $this->ApplyStyle(htmlentities(chr($symbol->parameter), ENT_QUOTES, 'ISO-8859-1'));
     }
  
     protected function FormatText($text)
     {
-      $this->BeginState();
-      $this->output .= $text->text;
-      $this->EndState();
+      $this->ApplyStyle($text->text);
     }
   }
 
