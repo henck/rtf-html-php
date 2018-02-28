@@ -137,7 +137,12 @@
  
     protected function GetChar()
     {
-      $this->char = $this->rtf[$this->pos++];
+      $this->char = null;
+      if ($this->pos < strlen($this->rtf)) {
+        $this->char = $this->rtf[$this->pos++];
+      } else {
+        $this->err = "Tried to read past EOF, RTF is probably truncated";
+      }
     }
  
     protected function ParseStartGroup()
