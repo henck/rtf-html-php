@@ -449,7 +449,7 @@
       elseif($word->word == "ulnone") $this->state->end_underline = $word->parameter;
       elseif($word->word == "strike") $this->state->strike = $word->parameter;
       elseif($word->word == "v") $this->state->hidden = $word->parameter;
-      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16);
+      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 20);
  
       elseif($word->word == "par")
       {
