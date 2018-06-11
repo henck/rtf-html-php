@@ -30,6 +30,10 @@ To convert the parser’s parse tree to HTML, call this (but only if the RTF was
 composer require henck/rtf-to-html
 ```
 
+#### Update 11 Jun '18:
+
+* Better display for text with altered font-size 
+
 #### Update 10 Mar '16:
 
 * The RTF parser would either issue warnings or go into an infinite loop when parsing a malformed RTF. Instead, it now returns TRUE when parsing was successful, and FALSE if it was not.
