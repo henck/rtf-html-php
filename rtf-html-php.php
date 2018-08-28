@@ -285,8 +285,7 @@
       do
       {
         $terminate = false;
-        $escape = false;
- 
+         
         // Is this an escape?
         if($this->char == '\\')
         {
@@ -295,9 +294,10 @@
           $this->GetChar();
           switch($this->char)
           {
-            case '\\': $text .= '\\'; break;
-            case '{':  $text .= '{';  break;
-            case '}':  $text .= '}';  break;
+            case '\\':
+            case '{':
+            case '}':
+              break;
             default:
               // Not an escape. Roll back.
               $this->pos = $this->pos - 2;
@@ -311,7 +311,7 @@
           $terminate = true;
         }
  
-        if(!$terminate && !$escape)
+        if(!$terminate)
         {
           $text .= $this->char;
           $this->GetChar();
