@@ -285,7 +285,7 @@
       do
       {
         $terminate = false;
-         
+        
         // Is this an escape?
         if($this->char == '\\')
         {
@@ -515,7 +515,7 @@
     protected function FormatControlSymbol($symbol)
     {
       if($symbol->symbol == '\'')
-        $this->ApplyStyle(htmlentities(chr($symbol->parameter), ENT_QUOTES, 'ISO-8859-1'));
+        $this->ApplyStyle("&#{$symbol->parameter};");
     }
  
     protected function FormatText($text)
