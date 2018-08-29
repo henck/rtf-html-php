@@ -208,8 +208,10 @@
         $this->GetChar();
       }
       if($parameter === null) $parameter = 1;
+      
+      // convert to a negative number when applicable
       if($negative) $parameter = -$parameter;
- 
+      
       // If this is \u, then the parameter will be followed by 
       // a character.
       if($word == "u") 
@@ -285,8 +287,7 @@
       do
       {
         $terminate = false;
-        $escape = false;
- 
+        
         // Is this an escape?
         if($this->char == '\\')
         {
@@ -295,9 +296,10 @@
           $this->GetChar();
           switch($this->char)
           {
-            case '\\': $text .= '\\'; break;
-            case '{':  $text .= '{';  break;
-            case '}':  $text .= '}';  break;
+            case '\\':
+            case '{':
+            case '}':
+              break;
             default:
               // Not an escape. Roll back.
               $this->pos = $this->pos - 2;
@@ -311,7 +313,7 @@
           $terminate = true;
         }
  
-        if(!$terminate && !$escape)
+        if(!$terminate)
         {
           $text .= $this->char;
           $this->GetChar();
@@ -515,7 +517,7 @@
     protected function FormatControlSymbol($symbol)
     {
       if($symbol->symbol == '\'')
-        $this->ApplyStyle(htmlentities(chr($symbol->parameter), ENT_QUOTES, 'ISO-8859-1'));
+        $this->ApplyStyle("&#{$symbol->parameter};");
     }
  
     protected function FormatText($text)
