@@ -208,7 +208,10 @@
         $this->GetChar();
       }
       if($parameter === null) $parameter = 1;
- 
+      
+      // convert to a negative number when applicable
+      if($negative) $parameter = -$parameter;
+      
       // If this is \u, then the parameter will be followed by 
       // a character.
       if($word == "u") 
