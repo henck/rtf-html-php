@@ -445,8 +445,10 @@
     {
       // Can we ignore this group?
       if ($group->GetType() == "fonttbl") return;
-      elseif ($group->GetType() == "colortbl") return;
-      elseif ($group->GetType() == "stylesheet") return;
+      elseif ($group->GetType() == "colortbl") {
+        $this->ExtractFontTable($group->children);
+        return;
+      } elseif ($group->GetType() == "stylesheet") return;
       elseif ($group->GetType() == "info") return;
       // Skip any pictures:
       if (substr($group->GetType(), 0, 4) == "pict") return;
