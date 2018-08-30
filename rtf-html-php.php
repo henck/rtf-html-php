@@ -16,10 +16,14 @@
    * 
    * $reader = new RtfReader();
    * $rtf = file_get_contents("test.rtf"); // or use a string
-   * $reader->Parse($rtf);
-   * //$reader->root->dump(); // to see what the reader read
-   * $formatter = new RtfHtml();
-   * echo $formatter->Format($reader->root);   
+   * if ($reader->Parse($rtf)) {
+   *   //$reader->root->dump(); // to see what the reader read
+   *   $formatter = new RtfHtml();
+   *   echo $formatter->Format($reader->root);
+   * } else { // Parse error occured.. bad RTF file
+   *   echo "Parse error occured";
+   * }
+   *
    */
  
   class RtfElement
@@ -413,6 +417,29 @@
       $this->FormatGroup($root);
       return $this->output;
     }
+    
+    protected function ExtractColorTable($colorTblGrp) {
+      // {\colortbl;\red0\green0\blue0;}
+      // index 0 is the 'auto' color
+      // force array to begin at index 1
+      $colortbl = array(0 => null); 
+      $c = count($colorTblGrp);
+      $color = '';
+      for ($i=2; $i<$c; $i++) { // iterate through colors
+        if ($colorTblGrp[$i] instanceof RtfControlWord) {
+          // extract RGB color and convert it to hex string
+          $color = sprintf('#%02x%02x%02x', // hex string format
+                              $colorTblGrp[$i]->parameter, // red
+                              $colorTblGrp[$i+1]->parameter, // green
+                              $colorTblGrp[$i+2]->parameter); // blue
+          $i+=2;
+          } elseif ($colorTblGrp[$i] instanceof RtfText) {
+            // this a delimiter ';' so store the already extracted color
+            $colortbl[] = $color;
+          }
+      }
+      $this->colortbl = $colortbl;
+    }
  
     protected function FormatGroup($group)
     {
@@ -535,7 +562,10 @@
 
     $reader = new RtfReader();
     $rtf = file_get_contents($file);
-    $reader->Parse($rtf);
-    $formatter = new RtfHtml();
-    echo $formatter->Format($reader->root);
+    if ($reader->Parse($rtf)) {
+      $formatter = new RtfHtml();
+      echo $formatter->Format($reader->root);      
+    } else {
+      echo "Parse error occured";
+    }
   }
