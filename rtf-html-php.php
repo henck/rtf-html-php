@@ -403,6 +403,16 @@
  
   class RtfHtml
   {
+    // initialise Encoding
+    public function __construct($encoding = 'UTF-8') {
+      if (in_array($encoding, mb_list_encodings()))
+        $this->encoding = $encoding;
+      else {
+        trigger_error("Unrecognized Encoding, revert to UTF-8");
+        $this->encoding = 'UTF-8';
+      }
+    }
+    
     public function Format($root)
     {
       $this->output = "";
@@ -444,13 +454,16 @@
     protected function FormatGroup($group)
     {
       // Can we ignore this group?
+      // Font table extraction not yet supported
       if ($group->GetType() == "fonttbl") return;
+      // Extract color table
       elseif ($group->GetType() == "colortbl") {
         $this->ExtractFontTable($group->children);
         return;
+      // Stylesheet extraction not yet supported
       } elseif ($group->GetType() == "stylesheet") return;
       elseif ($group->GetType() == "info") return;
-      // Skip any pictures:
+      // Pictures extraction not yet supported
       if (substr($group->GetType(), 0, 4) == "pict") return;
       if ($group->IsDestination()) return;
  
@@ -477,35 +490,59 @@
       elseif($word->word == "b") $this->state->bold = $word->parameter;
       elseif($word->word == "i") $this->state->italic = $word->parameter;
       elseif($word->word == "ul") $this->state->underline = $word->parameter;
-      elseif($word->word == "ulnone") $this->state->end_underline = $word->parameter;
+      elseif($word->word == "ulnone") $this->state->underline = false;
       elseif($word->word == "strike") $this->state->strike = $word->parameter;
       elseif($word->word == "v") $this->state->hidden = $word->parameter;
       elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 20);
  
-      elseif($word->word == "par")
-      {
+      elseif($word->word == "par") {
         // close previously opened 'span' tag
         $this->CloseTag();
         // decide whether to open or to close a 'p' tag
         if ($this->openedTags["p"]) $this->CloseTag("p");
-        else
-        {
+        else {
           $this->output .= "<p>";
           $this->openedTags['p'] = True;
         }
       }
  
-      // Characters:
-      elseif($word->word == "lquote") $this->output .= "&lsquo;";
-      elseif($word->word == "rquote") $this->output .= "&rsquo;";
-      elseif($word->word == "ldblquote") $this->output .= "&ldquo;";
-      elseif($word->word == "rdblquote") $this->output .= "&rdquo;";
-      elseif($word->word == "emdash") $this->output .= "&mdash;";
-      elseif($word->word == "endash") $this->output .= "&ndash;";
-      elseif($word->word == "bullet") $this->output .= "&bull;";
-      // Print Unicode character
-      elseif($word->word == "u")
-        $this->ApplyStyle("&#" . $word->parameter . ";");
+      // RTF special characters:
+      elseif($word->word == "lquote") $this->output .= "&lsquo;"; // character value 145
+      elseif($word->word == "rquote") $this->output .= "&rsquo;";  // character value 146
+      elseif($word->word == "ldblquote") $this->output .= "&ldquo;"; // character value 147
+      elseif($word->word == "rdblquote") $this->output .= "&rdquo;"; // character value 148
+      elseif($word->word == "bullet") $this->output .= "&bull;"; // character value 149
+      elseif($word->word == "endash") $this->output .= "&ndash;"; // character value 150
+      elseif($word->word == "emdash") $this->output .= "&mdash;"; // character value 151
+      
+      // more special characters
+      elseif($word->word == "emspace" || $word->word == "enspace")
+        $this->output .= " "; // character value 
+      elseif($word->word == "tab") $this->output .= "\t"; // character value 9
+      elseif($word->word == "line") $this->output .= "</br>"; // character value
+      
+      // style colors
+      elseif ($word->word == "cf") //|| $word->word == "chcfpat")
+        $this->state->textcolor = $word->parameter;
+      elseif ($word->word == "cb" ||
+              $word->word == "chcbpat" ||
+              $word->word == "highlight")
+        $this->state->background = $word->parameter;
+          
+      // Unicode characters
+      elseif($word->word == "u") {
+        $uchar = $this->DecodeUnicode($word->parameter);
+        $this->ApplyStyle($uchar);
+      }        
+
+    }
+    
+    protected function DecodeUnicode($ucode){
+      $baseEncoding = "UTF-8";
+      $htmlentity = "&#{$ucode};";
+      $decodedEntity = html_entity_decode($htmlentity, ENT_COMPAT, $baseEncoding);
+      $mbChar = mb_convert_encoding($decodedEntity, $this->encoding, $baseEncoding);
+      return $mbChar;
     }
  
     protected function ApplyStyle($txt)
@@ -545,8 +582,10 @@
  
     protected function FormatControlSymbol($symbol)
     {
-      if($symbol->symbol == '\'')
-        $this->ApplyStyle("&#{$symbol->parameter};");
+      if($symbol->symbol == '\'') {
+        $uchar = $this->DecodeUnicode($symbol->parameter);
+        $this->ApplyStyle($uchar);
+      }
     }
  
     protected function FormatText($text)
