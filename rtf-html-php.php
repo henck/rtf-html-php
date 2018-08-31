@@ -394,10 +394,11 @@
       $this->bold = false;
       $this->italic = false;
       $this->underline = false;
-      $this->end_underline = false;
       $this->strike = false;
       $this->hidden = false;
       $this->fontsize = 0;
+      $this->textcolor = 0;
+      $this->background = 0;
     }
   }
  
@@ -544,6 +545,11 @@
       $mbChar = mb_convert_encoding($decodedEntity, $this->encoding, $baseEncoding);
       return $mbChar;
     }
+    
+    protected function PrintColor($index) {
+      if (isset($this->colortbl[$index]))
+        return $this->colortbl[$index];
+    }
  
     protected function ApplyStyle($txt)
     {
@@ -562,10 +568,10 @@
         if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
         // control text color
         if($this->state->textcolor != 0)
-            $style .= "color:".$this->printColor($this->state->textcolor).";";
+            $style .= "color:".$this->PrintColor($this->state->textcolor).";";
         // control background color
         if ($this->state->background != 0)
-            $style .= "background-color:".$this->printColor($this->state->background).";";
+            $style .= "background-color:".$this->PrintColor($this->state->background).";";
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
