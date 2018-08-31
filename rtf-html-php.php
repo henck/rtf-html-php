@@ -458,7 +458,7 @@
       if ($group->GetType() == "fonttbl") return;
       // Extract color table
       elseif ($group->GetType() == "colortbl") {
-        $this->ExtractFontTable($group->children);
+        $this->ExtractColorTable($group->children);
         return;
       // Stylesheet extraction not yet supported
       } elseif ($group->GetType() == "stylesheet") return;
