@@ -550,22 +550,29 @@
       // create span only when a style change occur
       if ($this->previousState != $this->state)
       {
-        $span = "";
-        if($this->state->bold) $span .= "font-weight:bold;";
-        if($this->state->italic) $span .= "font-style:italic;";
-        if($this->state->underline) $span .= "text-decoration:underline;";
-        if($this->state->end_underline) $span .= "text-decoration:none;";
-        if($this->state->strike) $span .= "text-decoration:strikethrough;";
-        if($this->state->hidden) $span .= "display:none;";
-        if($this->state->fontsize != 0) $span .= "font-size: {$this->state->fontsize}px;";
-        
+        $style = "";
+        if($this->state->bold) $style .= "font-weight:bold;";
+        if($this->state->italic) $style .= "font-style:italic;";
+        if($this->state->underline) $style .= "text-decoration:underline;";
+        // state->underline is a toggle switch variable so no need for
+        // a dedicated state->end_underline variable
+        // if($this->state->end_underline) $span .= "text-decoration:none;";
+        if($this->state->strike) $style .= "text-decoration:line-through;";
+        if($this->state->hidden) $style .= "display:none;";
+        if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
+        // control text color
+        if($this->state->textcolor != 0)
+            $style .= "color:".$this->printColor($this->state->textcolor).";";
+        // control background color
+        if ($this->state->background != 0)
+            $style .= "background-color:".$this->printColor($this->state->background).";";
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
         // close previously opened 'span' tag
         $this->CloseTag();
         
-        $this->output .= "<span style=\"{$span}\">" . $txt;
+        $this->output .= "<span style=\"{$style}\">" . $txt;
         $this->openedTags["span"] = True;
       }
       else $this->output .= $txt;
