@@ -405,12 +405,12 @@
   class RtfHtml
   {
     // initialise Encoding
-    public function __construct($encoding = 'UTF-8') {
-      if (in_array($encoding, mb_list_encodings()))
+    public function __construct($encoding = 'HTML-ENTITIES') {
+      if ($encoding != 'HTML-ENTITIES' && in_array($encoding, mb_list_encodings()))
         $this->encoding = $encoding;
       else {
-        trigger_error("Unrecognized Encoding, revert to UTF-8");
-        $this->encoding = 'UTF-8';
+        trigger_error("Unrecognized Encoding, reverting back to HTML-ENTITIES");
+        $this->encoding = 'HTML-ENTITIES';
       }
     }
     
@@ -538,12 +538,52 @@
 
     }
     
-    protected function DecodeUnicode($ucode){
-      $baseEncoding = "UTF-8";
-      $htmlentity = "&#{$ucode};";
-      $decodedEntity = html_entity_decode($htmlentity, ENT_COMPAT, $baseEncoding);
-      $mbChar = mb_convert_encoding($decodedEntity, $this->encoding, $baseEncoding);
-      return $mbChar;
+    protected function DecodeUnicode($code) {
+      $htmlentity = "&#{$code};";
+      if ($this->encoding == 'HTML-ENTITIES') return $htmlentity;
+      else {
+        // Character codes 128 to 159 (U+0080 to U+009F) are not allowed in HTML
+        if ($code > 127 && $code < 160) {
+          $replace = array(
+            128 => "&#x20AC;", // EURO SIGN
+            129 => "",         // UNDEFINED
+            130 => "&#x201A;", // SINGLE LOW-9 QUOTATION MARK
+            131 => "&#x0192;", // LATIN SMALL LETTER F WITH HOOK
+            132 => "&#x201E;", // DOUBLE LOW-9 QUOTATION MARK
+            133 => "&#x2026;", // HORIZONTAL ELLIPSIS
+            134 => "&#x2020;", // DAGGER
+            135 => "&#x2021;", // DOUBLE DAGGER
+            136 => "&#x02C6;", // MODIFIER LETTER CIRCUMFLEX ACCENT
+            137 => "&#x2030;", // PER MILLE SIGN
+            138 => "&#x0160;", // LATIN CAPITAL LETTER S WITH CARON
+            139 => "&#x2039;", // SINGLE LEFT-POINTING ANGLE QUOTATION MARK
+            140 => "&#x0152;", // LATIN CAPITAL LIGATURE OE
+            141 => "",         // UNDEFINED
+            142 => "&#x017D;", // LATIN CAPITAL LETTER Z WITH CARON 
+            143 => "",         // UNDEFINED
+            144 => "",         // UNDEFINED
+            145 => "&#x2018;", // LEFT SINGLE QUOTATION MARK 
+            146 => "&#x2019;", // RIGHT SINGLE QUOTATION MARK
+            147 => "&#x201C;", // LEFT DOUBLE QUOTATION MARK
+            148 => "&#x201D;", // RIGHT DOUBLE QUOTATION MARK
+            149 => "&#x2022;", // BULLET
+            150 => "&#x2013;", // EN DASH
+            151 => "&#x2014;", // EM DASH
+            152 => "&#x02DC;", // SMALL TILDE
+            153 => "&#x2122;", // TRADE MARK SIGN
+            154 => "&#x0161;", // LATIN SMALL LETTER S WITH CARON
+            155 => "&#x203A;", // SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
+            156 => "&#x0153;", // LATIN SMALL LIGATURE OE
+            157 => "",         // UNDEFINED
+            158 => "&#x017e;", // LATIN SMALL LETTER Z WITH CARON
+            159 => "&#x0178;"  // LATIN CAPITAL LETTER Y WITH DIAERESIS
+          );
+          // Replace by their unicode equivalent
+          $htmlentity = $replace[$code];
+        }
+        $mbChar = mb_convert_encoding($htmlentity, $this->encoding, 'HTML-ENTITIES');
+        return $mbChar;
+      }
     }
     
     protected function PrintColor($index) {
