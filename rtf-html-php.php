@@ -523,7 +523,7 @@
       elseif($word->word == "emspace") $this->output .= "&emsp;"; // &#8195;
       //elseif($word->word == "emspace" || $word->word == "enspace") $this->output .= "&nbsp;"; // &#160; &#32;
       elseif($word->word == "tab") $this->output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; // character value 9
-      elseif($word->word == "line") $this->output .= "</br>"; // character value (line feed = &#10;) (carriage return = &#13;)
+      elseif($word->word == "line") $this->output .= "<br>"; // character value (line feed = &#10;) (carriage return = &#13;)
       
       // Unicode characters
       elseif($word->word == "u") {
