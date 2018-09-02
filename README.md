@@ -36,7 +36,7 @@ composer require henck/rtf-to-html
 
 #### Update 2 Sep '18:
 
-* Unicode characters are now fully suported
+* Unicode characters are now fully supported
 * Font color & background are now supported
 * Better HTML tag handling
 
