@@ -536,7 +536,10 @@
         // close previously opened tags
         $this->CloseTags();
         $this->output .= "<p>";
-        $this->openedTags['p'] = true;        
+        $this->openedTags['p'] = true;
+        // known bug:
+        // normally if this is the last paragraph in the document
+        // then do not open a 'p' tag
       }
     }
     
