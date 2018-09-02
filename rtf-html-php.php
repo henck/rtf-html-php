@@ -329,7 +329,9 @@
 
       // If group does not exist, then this is not a valid RTF file. Throw an exception.
       if($this->group == NULL) {
-        throw new Exception();
+        $err = "Parse error occured";
+        trigger_error($err);
+        throw new Exception("Parse error occured");
       }
 
       array_push($this->group->children, $rtftext);
@@ -415,10 +417,10 @@
     
     public function Format($root)
     {
-      $this->output = "";
+      $this->output = "<p>";
       // Keeping track of style modifications
       $this->previousState = null;
-      $this->openedTags = array('span' => False, 'p' => False);
+      $this->openedTags = array('span' => False, 'p' => True);
       // Create a stack of states:
       $this->states = array();
       // Put an initial standard state onto the stack:
@@ -453,18 +455,20 @@
  
     protected function FormatGroup($group)
     {
-      // Can we ignore this group?
+      // Can we ignore this group?      
       // Font table extraction not yet supported
-      if ($group->GetType() == "fonttbl") return;
+      if ($group->GetType() == "fonttbl") return;      
       // Extract color table
       elseif ($group->GetType() == "colortbl") {
         $this->ExtractColorTable($group->children);
-        return;
+        return;      
+      } 
       // Stylesheet extraction not yet supported
-      } elseif ($group->GetType() == "stylesheet") return;
+      elseif ($group->GetType() == "stylesheet") return;
       elseif ($group->GetType() == "info") return;
       // Pictures extraction not yet supported
       if (substr($group->GetType(), 0, 4) == "pict") return;
+      // Ignore Destionations
       if ($group->IsDestination()) return;
  
       // Push a new state onto the stack:
