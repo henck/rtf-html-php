@@ -300,10 +300,9 @@
           $this->GetChar();
           switch($this->char)
           {
-            case '\\':
-            case '{':
-            case '}':
-              break;
+            case '\\': break;
+            case '{': break;
+            case '}': break;
             default:
               // Not an escape. Roll back.
               $this->pos = $this->pos - 2;
