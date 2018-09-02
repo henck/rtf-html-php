@@ -487,109 +487,72 @@
  
     protected function FormatControlWord($word)
     {
-      if($word->word == "plain") $this->state->Reset();
-      elseif($word->word == "b") $this->state->bold = $word->parameter;
-      elseif($word->word == "i") $this->state->italic = $word->parameter;
-      elseif($word->word == "ul") $this->state->underline = $word->parameter;
-      elseif($word->word == "ulnone") $this->state->underline = false;
-      elseif($word->word == "strike") $this->state->strike = $word->parameter;
-      elseif($word->word == "v") $this->state->hidden = $word->parameter;
-      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 20);
- 
-      elseif($word->word == "par") {
-        // close previously opened 'span' tag
-        $this->CloseTag();
-        // decide whether to open or to close a 'p' tag
-        if ($this->openedTags["p"]) $this->CloseTag("p");
-        else {
-          $this->output .= "<p>";
-          $this->openedTags['p'] = True;
-        }
-      }
- 
-      // RTF special characters:
-      elseif($word->word == "lquote") $this->output .= "&lsquo;"; // character value 145
-      elseif($word->word == "rquote") $this->output .= "&rsquo;";  // character value 146
-      elseif($word->word == "ldblquote") $this->output .= "&ldquo;"; // character value 147
-      elseif($word->word == "rdblquote") $this->output .= "&rdquo;"; // character value 148
-      elseif($word->word == "bullet") $this->output .= "&bull;"; // character value 149
-      elseif($word->word == "endash") $this->output .= "&ndash;"; // character value 150
-      elseif($word->word == "emdash") $this->output .= "&mdash;"; // character value 151
+      // plain: Reset font formatting properties to default.
+      // pard: Reset to default paragraph properties.
+      if ($word->word == "plain" || $word->word == "pard") $this->state->Reset();
       
-      // more special characters
-      elseif($word->word == "emspace" || $word->word == "enspace")
-        $this->output .= " "; // character value 
-      elseif($word->word == "tab") $this->output .= "\t"; // character value 9
-      elseif($word->word == "line") $this->output .= "</br>"; // character value
+      // Font formatting properties
+      elseif($word->word == "b") $this->state->bold = $word->parameter; // bold
+      elseif($word->word == "i") $this->state->italic = $word->parameter; // italic
+      elseif($word->word == "ul") $this->state->underline = $word->parameter; // underline
+      elseif($word->word == "ulnone") $this->state->underline = false; // no underline
+      elseif($word->word == "strike") $this->state->strike = $word->parameter; // strike through
+      elseif($word->word == "v") $this->state->hidden = $word->parameter; // hidden
+      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16); // font size
       
-      // style colors
+      // Colors
       elseif ($word->word == "cf") //|| $word->word == "chcfpat")
-        $this->state->textcolor = $word->parameter;
-      elseif ($word->word == "cb" ||
-              $word->word == "chcbpat" ||
-              $word->word == "highlight")
-        $this->state->background = $word->parameter;
-          
+          $this->state->textcolor = $word->parameter;
+      elseif ($word->word == "cb" || $word->word == "chcbpat" || $word->word == "highlight")
+           $this->state->background = $word->parameter;
+      
+      // RTF special characters:
+      elseif($word->word == "lquote") $this->output .= "&lsquo;"; // &#145; &#8216;
+      elseif($word->word == "rquote") $this->output .= "&rsquo;";  // &#146; &#8217;
+      elseif($word->word == "ldblquote") $this->output .= "&ldquo;"; // &#147; &#8220;
+      elseif($word->word == "rdblquote") $this->output .= "&rdquo;"; // &#148; &#8221;
+      elseif($word->word == "bullet") $this->output .= "&bull;"; // &#149; &#8226;
+      elseif($word->word == "endash") $this->output .= "&ndash;"; // &#150; &#8211;
+      elseif($word->word == "emdash") $this->output .= "&mdash;"; // &#151; &#8212;
+            
+      // more special characters
+      elseif($word->word == "enspace") $this->output .= "&ensp;"; // &#8194;
+      elseif($word->word == "emspace") $this->output .= "&emsp;"; // &#8195;
+      //elseif($word->word == "emspace" || $word->word == "enspace") $this->output .= "&nbsp;"; // &#160; &#32;
+      elseif($word->word == "tab") $this->output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; // character value 9
+      elseif($word->word == "line") $this->output .= "</br>"; // character value (line feed = &#10;) (carriage return = &#13;)
+      
       // Unicode characters
       elseif($word->word == "u") {
         $uchar = $this->DecodeUnicode($word->parameter);
         $this->ApplyStyle($uchar);
-      }        
-
+      }
+ 
+       // End of paragraph
+      elseif($word->word == "par" || $word->word == "row") {
+        // close previously opened tags
+        $this->CloseTags();
+        $this->output .= "<p>";
+        $this->openedTags['p'] = true;        
+      }
     }
     
-    protected function DecodeUnicode($code) {
+    protected function DecodeUnicode($code)
+    {
       $htmlentity = "&#{$code};";
       if ($this->encoding == 'HTML-ENTITIES') return $htmlentity;
       else {
         // Character codes 128 to 159 (U+0080 to U+009F) are not allowed in HTML
         if ($code > 127 && $code < 160) {
-          $replace = array(
-            128 => "&#x20AC;", // EURO SIGN
-            129 => "",         // UNDEFINED
-            130 => "&#x201A;", // SINGLE LOW-9 QUOTATION MARK
-            131 => "&#x0192;", // LATIN SMALL LETTER F WITH HOOK
-            132 => "&#x201E;", // DOUBLE LOW-9 QUOTATION MARK
-            133 => "&#x2026;", // HORIZONTAL ELLIPSIS
-            134 => "&#x2020;", // DAGGER
-            135 => "&#x2021;", // DOUBLE DAGGER
-            136 => "&#x02C6;", // MODIFIER LETTER CIRCUMFLEX ACCENT
-            137 => "&#x2030;", // PER MILLE SIGN
-            138 => "&#x0160;", // LATIN CAPITAL LETTER S WITH CARON
-            139 => "&#x2039;", // SINGLE LEFT-POINTING ANGLE QUOTATION MARK
-            140 => "&#x0152;", // LATIN CAPITAL LIGATURE OE
-            141 => "",         // UNDEFINED
-            142 => "&#x017D;", // LATIN CAPITAL LETTER Z WITH CARON 
-            143 => "",         // UNDEFINED
-            144 => "",         // UNDEFINED
-            145 => "&#x2018;", // LEFT SINGLE QUOTATION MARK 
-            146 => "&#x2019;", // RIGHT SINGLE QUOTATION MARK
-            147 => "&#x201C;", // LEFT DOUBLE QUOTATION MARK
-            148 => "&#x201D;", // RIGHT DOUBLE QUOTATION MARK
-            149 => "&#x2022;", // BULLET
-            150 => "&#x2013;", // EN DASH
-            151 => "&#x2014;", // EM DASH
-            152 => "&#x02DC;", // SMALL TILDE
-            153 => "&#x2122;", // TRADE MARK SIGN
-            154 => "&#x0161;", // LATIN SMALL LETTER S WITH CARON
-            155 => "&#x203A;", // SINGLE RIGHT-POINTING ANGLE QUOTATION MARK
-            156 => "&#x0153;", // LATIN SMALL LIGATURE OE
-            157 => "",         // UNDEFINED
-            158 => "&#x017e;", // LATIN SMALL LETTER Z WITH CARON
-            159 => "&#x0178;"  // LATIN CAPITAL LETTER Y WITH DIAERESIS
-          );
-          // Replace by their unicode equivalent
-          $htmlentity = $replace[$code];
+          $utf = mb_convert_encoding(chr($code), 'UTF-8', 'windows-1252');
+          $htmlentity = htmlentities($utf, ENT_QUOTES, 'UTF-8');
         }
         $mbChar = mb_convert_encoding($htmlentity, $this->encoding, 'HTML-ENTITIES');
         return $mbChar;
       }
     }
     
-    protected function PrintColor($index) {
-      if (isset($this->colortbl[$index]))
-        return $this->colortbl[$index];
-    }
+    
  
     protected function ApplyStyle($txt)
     {
@@ -606,33 +569,44 @@
         if($this->state->strike) $style .= "text-decoration:line-through;";
         if($this->state->hidden) $style .= "display:none;";
         if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
-        // control text color
+        // Text color
         if($this->state->textcolor != 0)
             $style .= "color:".$this->PrintColor($this->state->textcolor).";";
-        // control background color
+        // Background color
         if ($this->state->background != 0)
             $style .= "background-color:".$this->PrintColor($this->state->background).";";
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
         // close previously opened 'span' tag
-        $this->CloseTag();
+        $this->CloseTag('span');
         
         $this->output .= "<span style=\"{$style}\">" . $txt;
         $this->openedTags["span"] = True;
       }
       else $this->output .= $txt;
     }
- 
-    protected function CloseTag($tag = "span")
+    
+    protected function PrintColor($index) {
+      if (isset($this->colortbl[$index]))
+        return $this->colortbl[$index];
+    }
+    
+    protected function CloseTag($tag)
     {
-      if ($this->openedTags[$tag])
-      {
+      if ($this->openedTags[$tag]) {
         $this->output .= "</{$tag}>";
         $this->openedTags[$tag] = False;
       }
     }
- 
+    
+    protected function CloseTags()
+    {
+      // Close all opened tags
+      foreach ($this->openedTags as $tag => $b)
+        $this->CloseTag($tag);
+    }
+    
     protected function FormatControlSymbol($symbol)
     {
       if($symbol->symbol == '\'') {
@@ -643,7 +617,7 @@
  
     protected function FormatText($text)
     {
-      $this->ApplyStyle($text->text);
+      $this->ApplyStyle(mb_convert_encoding($text->text, $this->encoding, 'auto'));
     }
   }
 
