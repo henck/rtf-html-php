@@ -24,11 +24,21 @@ To convert the parser’s parse tree to HTML, call this (but only if the RTF was
     $formatter = new RtfHtml();
     echo $formatter->Format($reader->root);
 
+For enhanced compatibility the default character encoding of the converted RTF unicode characters is set to HTML-ENTITIES. To change the default encoding, you can initialize the RtfHtml object with the desired encoding supported by mb_list_encodings(): ex. UTF-8
+
+    $formatter = new RtfHtml('UTF-8');
+
 ## Install via Composer
 
 ```
 composer require henck/rtf-to-html
 ```
+
+#### Update 2 Sep '18:
+
+* Unicode characters are now fully supported
+* Font color & background are now supported
+* Better HTML tag handling
 
 #### Update 11 Jun '18:
 

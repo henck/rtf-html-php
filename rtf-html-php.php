@@ -16,10 +16,14 @@
    * 
    * $reader = new RtfReader();
    * $rtf = file_get_contents("test.rtf"); // or use a string
-   * $reader->Parse($rtf);
-   * //$reader->root->dump(); // to see what the reader read
-   * $formatter = new RtfHtml();
-   * echo $formatter->Format($reader->root);   
+   * if ($reader->Parse($rtf)) {
+   *   //$reader->root->dump(); // to see what the reader read
+   *   $formatter = new RtfHtml();
+   *   echo $formatter->Format($reader->root);
+   * } else { // Parse error occured.. bad RTF file
+   *   echo "Parse error occured";
+   * }
+   *
    */
  
   class RtfElement
@@ -296,10 +300,9 @@
           $this->GetChar();
           switch($this->char)
           {
-            case '\\':
-            case '{':
-            case '}':
-              break;
+            case '\\': break;
+            case '{': break;
+            case '}': break;
             default:
               // Not an escape. Roll back.
               $this->pos = $this->pos - 2;
@@ -326,7 +329,9 @@
 
       // If group does not exist, then this is not a valid RTF file. Throw an exception.
       if($this->group == NULL) {
-        throw new Exception();
+        $err = "Parse error occured";
+        trigger_error($err);
+        throw new Exception("Parse error occured");
       }
 
       array_push($this->group->children, $rtftext);
@@ -390,21 +395,32 @@
       $this->bold = false;
       $this->italic = false;
       $this->underline = false;
-      $this->end_underline = false;
       $this->strike = false;
       $this->hidden = false;
       $this->fontsize = 0;
+      $this->textcolor = 0;
+      $this->background = 0;
     }
   }
  
   class RtfHtml
   {
+    // initialise Encoding
+    public function __construct($encoding = 'HTML-ENTITIES') {
+      if ($encoding != 'HTML-ENTITIES' && in_array($encoding, mb_list_encodings()))
+        $this->encoding = $encoding;
+      else {
+        trigger_error("Unrecognized Encoding, reverting back to HTML-ENTITIES");
+        $this->encoding = 'HTML-ENTITIES';
+      }
+    }
+    
     public function Format($root)
     {
-      $this->output = "";
+      $this->output = "<p>";
       // Keeping track of style modifications
       $this->previousState = null;
-      $this->openedTags = array('span' => False, 'p' => False);
+      $this->openedTags = array('span' => False, 'p' => True);
       // Create a stack of states:
       $this->states = array();
       // Put an initial standard state onto the stack:
@@ -413,16 +429,46 @@
       $this->FormatGroup($root);
       return $this->output;
     }
+    
+    protected function ExtractColorTable($colorTblGrp) {
+      // {\colortbl;\red0\green0\blue0;}
+      // index 0 is the 'auto' color
+      // force array to begin at index 1
+      $colortbl = array(0 => null); 
+      $c = count($colorTblGrp);
+      $color = '';
+      for ($i=2; $i<$c; $i++) { // iterate through colors
+        if ($colorTblGrp[$i] instanceof RtfControlWord) {
+          // extract RGB color and convert it to hex string
+          $color = sprintf('#%02x%02x%02x', // hex string format
+                              $colorTblGrp[$i]->parameter, // red
+                              $colorTblGrp[$i+1]->parameter, // green
+                              $colorTblGrp[$i+2]->parameter); // blue
+          $i+=2;
+          } elseif ($colorTblGrp[$i] instanceof RtfText) {
+            // this a delimiter ';' so store the already extracted color
+            $colortbl[] = $color;
+          }
+      }
+      $this->colortbl = $colortbl;
+    }
  
     protected function FormatGroup($group)
     {
-      // Can we ignore this group?
-      if ($group->GetType() == "fonttbl") return;
-      elseif ($group->GetType() == "colortbl") return;
+      // Can we ignore this group?      
+      // Font table extraction not yet supported
+      if ($group->GetType() == "fonttbl") return;      
+      // Extract color table
+      elseif ($group->GetType() == "colortbl") {
+        $this->ExtractColorTable($group->children);
+        return;      
+      } 
+      // Stylesheet extraction not yet supported
       elseif ($group->GetType() == "stylesheet") return;
       elseif ($group->GetType() == "info") return;
-      // Skip any pictures:
+      // Pictures extraction not yet supported
       if (substr($group->GetType(), 0, 4) == "pict") return;
+      // Ignore Destionations
       if ($group->IsDestination()) return;
  
       // Push a new state onto the stack:
@@ -444,85 +490,140 @@
  
     protected function FormatControlWord($word)
     {
-      if($word->word == "plain") $this->state->Reset();
-      elseif($word->word == "b") $this->state->bold = $word->parameter;
-      elseif($word->word == "i") $this->state->italic = $word->parameter;
-      elseif($word->word == "ul") $this->state->underline = $word->parameter;
-      elseif($word->word == "ulnone") $this->state->end_underline = $word->parameter;
-      elseif($word->word == "strike") $this->state->strike = $word->parameter;
-      elseif($word->word == "v") $this->state->hidden = $word->parameter;
-      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 20);
- 
-      elseif($word->word == "par")
-      {
-        // close previously opened 'span' tag
-        $this->CloseTag();
-        // decide whether to open or to close a 'p' tag
-        if ($this->openedTags["p"]) $this->CloseTag("p");
-        else
-        {
-          $this->output .= "<p>";
-          $this->openedTags['p'] = True;
-        }
+      // plain: Reset font formatting properties to default.
+      // pard: Reset to default paragraph properties.
+      if ($word->word == "plain" || $word->word == "pard") $this->state->Reset();
+      
+      // Font formatting properties
+      elseif($word->word == "b") $this->state->bold = $word->parameter; // bold
+      elseif($word->word == "i") $this->state->italic = $word->parameter; // italic
+      elseif($word->word == "ul") $this->state->underline = $word->parameter; // underline
+      elseif($word->word == "ulnone") $this->state->underline = false; // no underline
+      elseif($word->word == "strike") $this->state->strike = $word->parameter; // strike through
+      elseif($word->word == "v") $this->state->hidden = $word->parameter; // hidden
+      elseif($word->word == "fs") $this->state->fontsize = ceil(($word->parameter / 24) * 16); // font size
+      
+      // Colors
+      elseif ($word->word == "cf") //|| $word->word == "chcfpat")
+          $this->state->textcolor = $word->parameter;
+      elseif ($word->word == "cb" || $word->word == "chcbpat" || $word->word == "highlight")
+           $this->state->background = $word->parameter;
+      
+      // RTF special characters:
+      elseif($word->word == "lquote") $this->output .= "&lsquo;"; // &#145; &#8216;
+      elseif($word->word == "rquote") $this->output .= "&rsquo;";  // &#146; &#8217;
+      elseif($word->word == "ldblquote") $this->output .= "&ldquo;"; // &#147; &#8220;
+      elseif($word->word == "rdblquote") $this->output .= "&rdquo;"; // &#148; &#8221;
+      elseif($word->word == "bullet") $this->output .= "&bull;"; // &#149; &#8226;
+      elseif($word->word == "endash") $this->output .= "&ndash;"; // &#150; &#8211;
+      elseif($word->word == "emdash") $this->output .= "&mdash;"; // &#151; &#8212;
+            
+      // more special characters
+      elseif($word->word == "enspace") $this->output .= "&ensp;"; // &#8194;
+      elseif($word->word == "emspace") $this->output .= "&emsp;"; // &#8195;
+      //elseif($word->word == "emspace" || $word->word == "enspace") $this->output .= "&nbsp;"; // &#160; &#32;
+      elseif($word->word == "tab") $this->output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; // character value 9
+      elseif($word->word == "line") $this->output .= "<br>"; // character value (line feed = &#10;) (carriage return = &#13;)
+      
+      // Unicode characters
+      elseif($word->word == "u") {
+        $uchar = $this->DecodeUnicode($word->parameter);
+        $this->ApplyStyle($uchar);
       }
  
-      // Characters:
-      elseif($word->word == "lquote") $this->output .= "&lsquo;";
-      elseif($word->word == "rquote") $this->output .= "&rsquo;";
-      elseif($word->word == "ldblquote") $this->output .= "&ldquo;";
-      elseif($word->word == "rdblquote") $this->output .= "&rdquo;";
-      elseif($word->word == "emdash") $this->output .= "&mdash;";
-      elseif($word->word == "endash") $this->output .= "&ndash;";
-      elseif($word->word == "bullet") $this->output .= "&bull;";
-      // Print Unicode character
-      elseif($word->word == "u")
-        $this->ApplyStyle("&#" . $word->parameter . ";");
+       // End of paragraph
+      elseif($word->word == "par" || $word->word == "row") {
+        // close previously opened tags
+        $this->CloseTags();
+        $this->output .= "<p>";
+        $this->openedTags['p'] = true;
+        // known bug:
+        // normally if this is the last paragraph in the document
+        // then do not open a 'p' tag
+      }
     }
+    
+    protected function DecodeUnicode($code)
+    {
+      $htmlentity = "&#{$code};";
+      if ($this->encoding == 'HTML-ENTITIES') return $htmlentity;
+      else {
+        // Character codes 128 to 159 (U+0080 to U+009F) are not allowed in HTML
+        if ($code > 127 && $code < 160) {
+          $utf = mb_convert_encoding(chr($code), 'UTF-8', 'windows-1252');
+          $htmlentity = htmlentities($utf, ENT_QUOTES, 'UTF-8');
+        }
+        $mbChar = mb_convert_encoding($htmlentity, $this->encoding, 'HTML-ENTITIES');
+        return $mbChar;
+      }
+    }
+    
+    
  
     protected function ApplyStyle($txt)
     {
       // create span only when a style change occur
       if ($this->previousState != $this->state)
       {
-        $span = "";
-        if($this->state->bold) $span .= "font-weight:bold;";
-        if($this->state->italic) $span .= "font-style:italic;";
-        if($this->state->underline) $span .= "text-decoration:underline;";
-        if($this->state->end_underline) $span .= "text-decoration:none;";
-        if($this->state->strike) $span .= "text-decoration:strikethrough;";
-        if($this->state->hidden) $span .= "display:none;";
-        if($this->state->fontsize != 0) $span .= "font-size: {$this->state->fontsize}px;";
-        
+        $style = "";
+        if($this->state->bold) $style .= "font-weight:bold;";
+        if($this->state->italic) $style .= "font-style:italic;";
+        if($this->state->underline) $style .= "text-decoration:underline;";
+        // state->underline is a toggle switch variable so no need for
+        // a dedicated state->end_underline variable
+        // if($this->state->end_underline) $span .= "text-decoration:none;";
+        if($this->state->strike) $style .= "text-decoration:line-through;";
+        if($this->state->hidden) $style .= "display:none;";
+        if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
+        // Text color
+        if($this->state->textcolor != 0)
+            $style .= "color:".$this->PrintColor($this->state->textcolor).";";
+        // Background color
+        if ($this->state->background != 0)
+            $style .= "background-color:".$this->PrintColor($this->state->background).";";
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
         // close previously opened 'span' tag
-        $this->CloseTag();
+        $this->CloseTag('span');
         
-        $this->output .= "<span style=\"{$span}\">" . $txt;
+        $this->output .= "<span style=\"{$style}\">" . $txt;
         $this->openedTags["span"] = True;
       }
       else $this->output .= $txt;
     }
- 
-    protected function CloseTag($tag = "span")
+    
+    protected function PrintColor($index) {
+      if (isset($this->colortbl[$index]))
+        return $this->colortbl[$index];
+    }
+    
+    protected function CloseTag($tag)
     {
-      if ($this->openedTags[$tag])
-      {
+      if ($this->openedTags[$tag]) {
         $this->output .= "</{$tag}>";
         $this->openedTags[$tag] = False;
       }
     }
- 
+    
+    protected function CloseTags()
+    {
+      // Close all opened tags
+      foreach ($this->openedTags as $tag => $b)
+        $this->CloseTag($tag);
+    }
+    
     protected function FormatControlSymbol($symbol)
     {
-      if($symbol->symbol == '\'')
-        $this->ApplyStyle("&#{$symbol->parameter};");
+      if($symbol->symbol == '\'') {
+        $uchar = $this->DecodeUnicode($symbol->parameter);
+        $this->ApplyStyle($uchar);
+      }
     }
  
     protected function FormatText($text)
     {
-      $this->ApplyStyle($text->text);
+      $this->ApplyStyle(mb_convert_encoding($text->text, $this->encoding, 'auto'));
     }
   }
 
@@ -535,7 +636,10 @@
 
     $reader = new RtfReader();
     $rtf = file_get_contents($file);
-    $reader->Parse($rtf);
-    $formatter = new RtfHtml();
-    echo $formatter->Format($reader->root);
+    if ($reader->Parse($rtf)) {
+      $formatter = new RtfHtml();
+      echo $formatter->Format($reader->root);      
+    } else {
+      echo "Parse error occured";
+    }
   }
