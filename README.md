@@ -34,6 +34,13 @@ For enhanced compatibility the default character encoding of the converted RTF u
 composer require henck/rtf-to-html
 ```
 
+## Caveats
+
+* Please note that rtf-html-php requires your PHP installation to support the `mb_convert_encoding` function. Therefore you must have the `php-mbstring` module installed. For fresh PHP installations, it will usually be there.
+
+
+## History
+
 #### Update 2 Sep '18:
 
 * Unicode characters are now fully supported
