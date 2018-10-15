@@ -407,9 +407,8 @@
   {
     // initialise Encoding
     public function __construct($encoding = 'HTML-ENTITIES') {
-      if ($encoding != 'HTML-ENTITIES' && in_array($encoding, mb_list_encodings()))
-        $this->encoding = $encoding;
-      else {
+      $this->encoding = $encoding;
+      if ($encoding != 'HTML-ENTITIES' && !in_array($encoding, mb_list_encodings())) {
         trigger_error("Unrecognized Encoding, reverting back to HTML-ENTITIES");
         $this->encoding = 'HTML-ENTITIES';
       }
