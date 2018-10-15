@@ -432,12 +432,11 @@
     
     protected function ExtractColorTable($colorTblGrp) {
       // {\colortbl;\red0\green0\blue0;}
-      // index 0 is the 'auto' color
-      // force array to begin at index 1
-      $colortbl = array(0 => null); 
+      // index 0 of the RTF color table  is the 'auto' color
+      $colortbl = array(); 
       $c = count($colorTblGrp);
       $color = '';
-      for ($i=2; $i<$c; $i++) { // iterate through colors
+      for ($i=1; $i<$c; $i++) { // iterate through colors
         if ($colorTblGrp[$i] instanceof RtfControlWord) {
           // extract RGB color and convert it to hex string
           $color = sprintf('#%02x%02x%02x', // hex string format
@@ -446,8 +445,12 @@
                               $colorTblGrp[$i+2]->parameter); // blue
           $i+=2;
           } elseif ($colorTblGrp[$i] instanceof RtfText) {
-            // this a delimiter ';' so store the already extracted color
-            $colortbl[] = $color;
+            // this a delimiter ';' so 
+            if ($i != 1) // store the already extracted color
+              $colortbl[] = $color;
+            else // this is the 'auto' color. it's black by default
+              $colortbl[] = "#000000";
+            
           }
       }
       $this->colortbl = $colortbl;
