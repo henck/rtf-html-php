@@ -437,7 +437,7 @@
       $colortbl = array(0 => null); 
       $c = count($colorTblGrp);
       $color = '';
-      for ($i=2; $i<$c; $i++) { // iterate through colors
+      for ($i=1; $i<$c; $i++) { // iterate through colors
         if ($colorTblGrp[$i] instanceof RtfControlWord) {
           // extract RGB color and convert it to hex string
           $color = sprintf('#%02x%02x%02x', // hex string format
