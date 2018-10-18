@@ -387,8 +387,8 @@
       $this->strike = False;
       $this->hidden = False;
       $this->fontsize = 0;
-      $this->textcolor = 0;
-      $this->background = 0;
+      $this->fontcolor = null;
+      $this->background = null;
     }
   }
  
@@ -437,8 +437,8 @@
           // this a delimiter ';' so 
           if ($i != 1) { // store the already extracted color
             $colortbl[] = $color;
-          } else { // this is the 'auto' color. it's black by default
-            $colortbl[] = "#000000";
+          } else { // this is the 'auto' color.
+            $colortbl[] = 0;
           }
         }
       }
@@ -497,7 +497,7 @@
       
       // Colors
       }elseif ($word->word == "cf") { //|| $word->word == "chcfpat")
-          $this->state->textcolor = $word->parameter;
+          $this->state->fontcolor = $word->parameter;
       }elseif ($word->word == "cb" || $word->word == "chcbpat" || $word->word == "highlight") {
            $this->state->background = $word->parameter;
       
@@ -566,12 +566,16 @@
         if($this->state->hidden) $style .= "display:none;";
         if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
         // Text color
-        if($this->state->textcolor != 0) {
-          $style .= "color:".$this->PrintColor($this->state->textcolor).";";
+        if(isset($this->state->fontcolor)) {
+          // check if color is set. in particular when it's the 'auto' color
+          if ($this->colortbl[$this->state->fontcolor])
+            $style .= "color:".$this->PrintColor($this->state->fontcolor).";";
         }
         // Background color
-        if ($this->state->background != 0) {
-          $style .= "background-color:".$this->PrintColor($this->state->background).";";
+        if (isset($this->state->background)) {
+          // check if color is set. in particular when it's the 'auto' color
+          if ($this->colortbl[$this->state->fontcolor])
+            $style .= "background-color:".$this->PrintColor($this->state->background).";";
         }
         // Keep track of preceding style
         $this->previousState = clone $this->state;
@@ -585,8 +589,7 @@
       else $this->output .= $txt;
     }
     
-    protected function PrintColor($index) {
-      if (isset($this->colortbl[$index]))
+    protected function PrintColor($index) {      
         return $this->colortbl[$index];
     }
     
