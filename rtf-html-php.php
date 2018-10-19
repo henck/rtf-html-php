@@ -406,38 +406,42 @@
     
     public function Format($root)
     {
-      $this->output = "<p>";
-      // Keeping track of style modifications
+      // Keep track of opened html tags
+      $this->openedTags = array('span' => False, 'p' => False);
+      // Keep track of style modifications
       $this->previousState = null;
-      $this->openedTags = array('span' => False, 'p' => True);
-      // Create a stack of states:
+      // and create a stack of states
       $this->states = array();
-      // Put an initial standard state onto the stack:
+      // Put an initial standard state onto the stack
       $this->state = new RtfState();
       array_push($this->states, $this->state);
+      // Create the first paragraph
+      $this->OpenTag('p');
+      // Begin format
       $this->FormatGroup($root);
-      return $this->output;
+      // Remove the last opened <p> tag and return
+      return substr($this->output ,0, -3);
     }
     
     protected function ExtractColorTable($colorTblGrp) {
       // {\colortbl;\red0\green0\blue0;}
-      // index 0 of the RTF color table  is the 'auto' color
+      // Index 0 of the RTF color table  is the 'auto' color
       $colortbl = array(); 
       $c = count($colorTblGrp);
       $color = '';
-      for ($i=1; $i<$c; $i++) { // iterate through colors
+      for ($i=1; $i<$c; $i++) { // Iterate through colors
         if($colorTblGrp[$i] instanceof RtfControlWord) {
-          // extract RGB color and convert it to hex string
+          // Extract RGB color and convert it to hex string
           $color = sprintf('#%02x%02x%02x', // hex string format
                               $colorTblGrp[$i]->parameter, // red
                               $colorTblGrp[$i+1]->parameter, // green
                               $colorTblGrp[$i+2]->parameter); // blue
           $i+=2;
         } elseif($colorTblGrp[$i] instanceof RtfText) {
-          // this a delimiter ';' so 
-          if ($i != 1) { // store the already extracted color
+          // This is a delimiter ';' so
+          if ($i != 1) { // Store the already extracted color
             $colortbl[] = $color;
-          } else { // this is the 'auto' color.
+          } else { // This is the 'auto' color
             $colortbl[] = 0;
           }
         }
@@ -475,7 +479,7 @@
         elseif($child instanceof RtfText) $this->FormatText($child);
       }
  
-      // Pop state from stack.
+      // Pop state from stack
       array_pop($this->states);
       $this->state = $this->states[sizeof($this->states)-1];
     }
@@ -486,7 +490,7 @@
       // pard: Reset to default paragraph properties.
       if($word->word == "plain" || $word->word == "pard"){ $this->state->Reset();
       
-      // Font formatting properties
+      // Font formatting properties:
       }elseif($word->word == "b"){ $this->state->bold = $word->parameter; // bold
       }elseif($word->word == "i"){ $this->state->italic = $word->parameter; // italic
       }elseif($word->word == "ul"){ $this->state->underline = $word->parameter; // underline
@@ -495,7 +499,7 @@
       }elseif($word->word == "v"){ $this->state->hidden = $word->parameter; // hidden
       }elseif($word->word == "fs"){ $this->state->fontsize = ceil(($word->parameter / 24) * 16); // font size
       
-      // Colors
+      // Colors:
       }elseif ($word->word == "cf") { //|| $word->word == "chcfpat")
           $this->state->fontcolor = $word->parameter;
       }elseif ($word->word == "cb" || $word->word == "chcbpat" || $word->word == "highlight") {
@@ -510,27 +514,24 @@
       }elseif($word->word == "endash"){ $this->output .= "&ndash;"; // &#150; &#8211;
       }elseif($word->word == "emdash"){ $this->output .= "&mdash;"; // &#151; &#8212;
             
-      // more special characters
+      // more special characters:
       }elseif($word->word == "enspace"){ $this->output .= "&ensp;"; // &#8194;
       }elseif($word->word == "emspace"){ $this->output .= "&emsp;"; // &#8195;
       //}elseif($word->word == "emspace" || $word->word == "enspace"){ $this->output .= "&nbsp;"; // &#160; &#32;
       }elseif($word->word == "tab"){ $this->output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; // character value 9
       }elseif($word->word == "line"){ $this->output .= "<br>"; // character value (line feed = &#10;) (carriage return = &#13;)
       
-      // Unicode characters
+      // Unicode characters:
       }elseif($word->word == "u") {
         $uchar = $this->DecodeUnicode($word->parameter);
         $this->ApplyStyle($uchar);
       
-       // End of paragraph
+      // End of paragraph:
       }elseif($word->word == "par" || $word->word == "row") {
-        // close previously opened tags
+        // Close previously opened tags
         $this->CloseTags();
-        $this->output .= "<p>";
-        $this->openedTags['p'] = True;
-        // known bug:
-        // normally if this is the last paragraph in the document
-        // then do not open a 'p' tag
+        // Begin a new paragraph
+        $this->OpenTag('p');
       }
     }
     
@@ -553,8 +554,13 @@
  
     protected function ApplyStyle($txt)
     {
-      // create span only when a style change occur
-      if($this->previousState != $this->state) {
+      // Create a new 'span' element only when a style change occur
+      // 1st case: style change occured
+      // 2nd case: there is no change in style but the already created 'span'
+      // element is somehow closed (ex. because of an end of paragraph)
+      if  ($this->state != $this->previousState ||
+          ($this->state == $this->previousState && !$this->openedTags['span']))
+      {
         $style = "";
         if($this->state->bold) $style .= "font-weight:bold;";
         if($this->state->italic) $style .= "font-style:italic;";
@@ -564,40 +570,59 @@
         // if($this->state->end_underline) {$span .= "text-decoration:none;";}
         if($this->state->strike) $style .= "text-decoration:line-through;";
         if($this->state->hidden) $style .= "display:none;";
-        if($this->state->fontsize != 0) $style .= "font-size: {$this->state->fontsize}px;";
-        // Text color
+        if($this->state->fontsize != 0) $style .= "font-size:{$this->state->fontsize}px;";
+        // Font color:
         if(isset($this->state->fontcolor)) {
-          // check if color is set. in particular when it's the 'auto' color
+          // Check if color is set. in particular when it's the 'auto' color
           if ($this->colortbl[$this->state->fontcolor])
             $style .= "color:".$this->PrintColor($this->state->fontcolor).";";
         }
-        // Background color
+        // Background color:
         if (isset($this->state->background)) {
-          // check if color is set. in particular when it's the 'auto' color
+          // Check if color is set. in particular when it's the 'auto' color
           if ($this->colortbl[$this->state->fontcolor])
             $style .= "background-color:".$this->PrintColor($this->state->background).";";
         }
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
-        // close previously opened 'span' tag
-        $this->CloseTag('span');
-        
-        $this->output .= "<span style=\"{$style}\">" . $txt;
-        $this->openedTags["span"] = True;
+        if ($style != '') {
+          // If applicable close previously opened 'span' tag
+          $this->CloseTag('span');
+          // Create a new 'span' tag
+          $this->OpenTag('span',"style=\"{$style}\"");
+        }
       }
-      else $this->output .= $txt;
+      $this->output .= $txt;
     }
     
     protected function PrintColor($index) {      
         return $this->colortbl[$index];
     }
     
+    protected function OpenTag($tag, $attr = '')
+    {
+      $this->output .= $attr ? "<{$tag} {$attr}>" : "<{$tag}>";
+      $this->openedTags[$tag] = True;
+    }
     protected function CloseTag($tag)
     {
       if ($this->openedTags[$tag]) {
-        $this->output .= "</{$tag}>";
-        $this->openedTags[$tag] = False;
+        // Check for empty html elements
+        if (substr($this->output ,-strlen("<{$tag}>")) == "<{$tag}>"){
+          switch ($tag)
+          {
+            case 'p': // Replace empty 'p' element with a line break
+              $this->output = substr($this->output ,0, -3)."<br>";
+              break;            
+            default: // Delete empty elements
+              $this->output = substr($this->output ,0, -strlen("<{$tag}>"));
+              break;
+          }
+        } else {
+          $this->output .= "</{$tag}>";
+          $this->openedTags[$tag] = False;
+        }
       }
     }
     
