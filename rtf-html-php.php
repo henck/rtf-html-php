@@ -394,20 +394,25 @@
  
   class RtfHtml
   {
-    // initialise Encoding
+    // Initialise Encoding
     public function __construct($encoding = 'HTML-ENTITIES')
     {
-      $this->encoding = $encoding;
-      if ($encoding != 'HTML-ENTITIES' && !in_array($encoding, mb_list_encodings())) {
-        trigger_error("Unrecognized Encoding, reverting back to HTML-ENTITIES");
-        $this->encoding = 'HTML-ENTITIES';
+      if ($encoding != 'HTML-ENTITIES') {
+        // Check if mbstring extension is loaded
+        if (!extension_loaded('mbstring')) {
+          trigger_error("PHP mbstring extension not enabled, reverting back to HTML-ENTITIES");
+          $encoding = 'HTML-ENTITIES';
+        // Check if the encoding is reconized by mbstring extension
+        } elseif (!in_array($encoding, mb_list_encodings())){
+          trigger_error("Unrecognized Encoding, reverting back to HTML-ENTITIES");
+          $encoding = 'HTML-ENTITIES';
+        }
       }
+      $this->encoding = $encoding;
     }
     
     public function Format($root)
     {
-      // Keep track of opened html tags
-      $this->openedTags = array('span' => False, 'p' => False);
       // Keep track of style modifications
       $this->previousState = null;
       // and create a stack of states
@@ -415,6 +420,8 @@
       // Put an initial standard state onto the stack
       $this->state = new RtfState();
       array_push($this->states, $this->state);
+      // Keep track of opened html tags
+      $this->openedTags = array('span' => False, 'p' => False);
       // Create the first paragraph
       $this->OpenTag('p');
       // Begin format
@@ -550,8 +557,6 @@
       }
     }
     
-    
- 
     protected function ApplyStyle($txt)
     {
       // Create a new 'span' element only when a style change occur
@@ -605,6 +610,7 @@
       $this->output .= $attr ? "<{$tag} {$attr}>" : "<{$tag}>";
       $this->openedTags[$tag] = True;
     }
+    
     protected function CloseTag($tag)
     {
       if ($this->openedTags[$tag]) {
@@ -643,7 +649,12 @@
  
     protected function FormatText($text)
     {
-      $this->ApplyStyle(mb_convert_encoding($text->text, $this->encoding, 'auto'));
+      // Convert special characters to HTML entities
+      $txt = htmlspecialchars($text->text, ENT_NOQUOTES, 'UTF-8');
+      if($this->encoding == 'HTML-ENTITIES')
+        $this->ApplyStyle($txt);
+      else
+        $this->ApplyStyle(mb_convert_encoding($txt, $this->encoding, 'UTF-8'));
     }
   }
 
