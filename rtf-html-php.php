@@ -280,11 +280,14 @@
       // Parse plain text up to backslash or brace,
       // unless escaped.
       $text = "";
-
+      $terminate = False;
       do
       {
-        $terminate = False;
-        
+        // Ignore EOL characters
+        if($this->char == "\r" || $this->char == "\n") {
+          $this->GetChar();
+          continue;
+        }
         // Is this an escape?
         if($this->char == '\\') {
           // Perform lookahead to see if this
@@ -306,10 +309,11 @@
           $terminate = True;
         }
  
-        if(!$terminate) { // store normal text
+        if(!$terminate) {
+          // Save plain text
           $text .= $this->char;
           $this->GetChar();
-        }
+        } 
       } 
       while(!$terminate && $this->pos < $this->len);
  
@@ -320,7 +324,7 @@
       if($this->group == null) {
         $err = "Parse error occured";
         trigger_error($err);
-        throw new Exception("Parse error occured");
+        throw new Exception($err);
       }
 
       array_push($this->group->children, $rtftext);
