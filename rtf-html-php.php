@@ -236,8 +236,8 @@
         $parameter = $parameter * 10 + $this->char;
         $this->GetChar();
       }
-      // if no parameter assume control word's default
-      // if no default then assign 0 to the parameter:
+      // if no parameter assume control word's default (usually 1)
+      // if no default then assign 0 to the parameter
       if($parameter === null) $parameter = 1;
       
       // convert to a negative number when applicable
@@ -277,7 +277,7 @@
           // - Any RTF control word or symbol is considered a single character
           //  for the purposes of counting skippable characters. For this reason
           //  it's more appropriate to create à $skip flag and let the Parse()
-          //  function take care of the skippable characters
+          //  function take care of the skippable characters.
           $uc--;
         }
       }
@@ -475,6 +475,44 @@
       $this->font = isset($defaultFont) ? $defaultFont : null;
     }
     
+    public function PrintStyle()
+    {
+      $style = "";
+      
+      if($this->bold) $style .= "font-weight:bold;";
+      if($this->italic) $style .= "font-style:italic;";
+      if($this->underline) $style .= "text-decoration:underline;";
+      // state->underline is a toggle switch variable so no need for
+      // a dedicated state->end_underline variable
+      // if($this->state->end_underline) {$span .= "text-decoration:none;";}
+      if($this->strike) $style .= "text-decoration:line-through;";
+      if($this->hidden) $style .= "display:none;";
+      if(isset($this->font)) {
+        if (isset(self::$fonttbl[$this->font]->fontfamily))
+          $style .= "font-family:" . self::$fonttbl[$this->font]->fontfamily . ";";
+      }
+      if($this->fontsize != 0) $style .= "font-size:{$this->fontsize}px;";
+      // Font color:
+      if(isset($this->fontcolor)) {
+        // Check if color is set. in particular when it's the 'auto' color
+        if (self::$colortbl[$this->fontcolor])
+          $style .= "color:" . self::$colortbl[$this->fontcolor] . ";";
+      }
+      // Background color:
+      if (isset($this->background)) {
+        // Check if color is set. in particular when it's the 'auto' color
+        if (self::$colortbl[$this->background])
+          $style .= "background-color:" . self::$colortbl[$this->background] . ";";
+      
+      // Highlight color:
+      } elseif (isset($this->hcolor)) {       
+        if (isset(self::$highlight[$this->hcolor]))
+          $style .= "background-color:" . self::$highlight[$this->hcolor] . ";";
+      }
+      
+      return $style;
+    }
+
     public function isLike($state)
     {
       if (!($state instanceof RtfState))
@@ -676,6 +714,7 @@
       } 
       // Stylesheet extraction not yet supported
       elseif($group->GetType() == "stylesheet") return;
+      // Ignore Document information
       elseif($group->GetType() == "info") return;
       // Pictures extraction not yet supported
       if(substr($group->GetType(), 0, 4) == "pict") return;
@@ -724,25 +763,25 @@
       }elseif ($word->word == "highlight") {
         $this->state->hcolor = $word->parameter;
       // RTF special characters:
-      }elseif($word->word == "lquote"){ $this->output .= "&lsquo;"; // &#145; &#8216;
-      }elseif($word->word == "rquote"){ $this->output .= "&rsquo;";  // &#146; &#8217;
-      }elseif($word->word == "ldblquote"){ $this->output .= "&ldquo;"; // &#147; &#8220;
-      }elseif($word->word == "rdblquote"){ $this->output .= "&rdquo;"; // &#148; &#8221;
-      }elseif($word->word == "bullet"){ $this->output .= "&bull;"; // &#149; &#8226;
-      }elseif($word->word == "endash"){ $this->output .= "&ndash;"; // &#150; &#8211;
-      }elseif($word->word == "emdash"){ $this->output .= "&mdash;"; // &#151; &#8212;
+      }elseif($word->word == "lquote"){ $this->Write("&lsquo;"); // &#145; &#8216;
+      }elseif($word->word == "rquote"){ $this->Write("&rsquo;");  // &#146; &#8217;
+      }elseif($word->word == "ldblquote"){ $this->Write("&ldquo;"); // &#147; &#8220;
+      }elseif($word->word == "rdblquote"){ $this->Write("&rdquo;"); // &#148; &#8221;
+      }elseif($word->word == "bullet"){ $this->Write("&bull;"); // &#149; &#8226;
+      }elseif($word->word == "endash"){ $this->Write("&ndash;"); // &#150; &#8211;
+      }elseif($word->word == "emdash"){ $this->Write("&mdash;"); // &#151; &#8212;
             
       // more special characters:
-      }elseif($word->word == "enspace"){ $this->output .= "&ensp;"; // &#8194;
-      }elseif($word->word == "emspace"){ $this->output .= "&emsp;"; // &#8195;
-      //}elseif($word->word == "emspace" || $word->word == "enspace"){ $this->output .= "&nbsp;"; // &#160; &#32;
-      }elseif($word->word == "tab"){ $this->output .= "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"; // character value 9
+      }elseif($word->word == "enspace"){ $this->Write("&ensp;"); // &#8194;
+      }elseif($word->word == "emspace"){ $this->Write("&emsp;"); // &#8195;
+      //}elseif($word->word == "emspace" || $word->word == "enspace"){ $this->Write("&nbsp;"); // &#160; &#32;
+      }elseif($word->word == "tab"){ $this->Write("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"); // character value 9
       }elseif($word->word == "line"){ $this->output .= "<br>"; // character value (line feed = &#10;) (carriage return = &#13;)
       
       // Unicode characters:
       }elseif($word->word == "u") {
         $uchar = $this->DecodeUnicode($word->parameter);
-        $this->ApplyStyle($uchar);
+        $this->Write($uchar);
       
       // End of paragraph:
       }elseif($word->word == "par" || $word->word == "row") {
@@ -781,7 +820,7 @@
       }
     }
     
-    protected function ApplyStyle($txt)
+    protected function Write($txt)
     {
       // Create a new 'span' element only when a style change occur
       // 1st case: style change occured
@@ -790,53 +829,19 @@
       if  (!$this->state->isLike($this->previousState) ||
           ($this->state->isLike($this->previousState) && !$this->openedTags['span']))
       {
-        $style = "";
-        if($this->state->bold) $style .= "font-weight:bold;";
-        if($this->state->italic) $style .= "font-style:italic;";
-        if($this->state->underline) $style .= "text-decoration:underline;";
-        // state->underline is a toggle switch variable so no need for
-        // a dedicated state->end_underline variable
-        // if($this->state->end_underline) {$span .= "text-decoration:none;";}
-        if($this->state->strike) $style .= "text-decoration:line-through;";
-        if($this->state->hidden) $style .= "display:none;";
-        // Font:
-        if(isset($this->font)) {
-          if (isset(self::$fonttbl[$this->font]->fontfamily))
-            $style .= "font-family:" . self::$fonttbl[$this->font]->fontfamily . ";";
-        }
-        if($this->state->fontsize != 0) $style .= "font-size:{$this->state->fontsize}px;";        
-        // Font color:
-        if(isset($this->state->fontcolor)) {
-          // Check if color is set. in particular when it's the 'auto' color
-          if (RtfState::$colortbl[$this->state->fontcolor])
-            $style .= "color:" . RtfState::$colortbl[$this->state->fontcolor] . ";";
-        }
-        // Background color:
-        if (isset($this->state->background)) {
-          // Check if color is set. in particular when it's the 'auto' color
-          if (RtfState::$colortbl[$this->state->fontcolor])
-            $style .= "background-color:" . RtfState::$colortbl[$this->state->background] . ";";
-        // Highlight color:
-        } elseif (isset($this->hcolor)) {       
-          if (isset(self::$highlight[$this->hcolor]))
-            $style .= "background-color:" . self::$highlight[$this->hcolor] . ";";
-        }
+        // If applicable close previously opened 'span' tag
+        $this->CloseTag('span');
+        
+        $style = $this->state->PrintStyle();
         
         // Keep track of preceding style
-        $this->previousState = clone $this->state;
-        
-        if ($style != '') {
-          // If applicable close previously opened 'span' tag
-          $this->CloseTag('span');
-          // Create a new 'span' tag
-          $this->OpenTag('span',"style=\"{$style}\"");
-        }
+        $this->previousState = clone $this->state;        
+       
+        // Create style attribute and open span
+        $attr = $style ? "style=\"{$style}\"" : "";
+        $this->OpenTag('span', $attr);
       }
       $this->output .= $txt;
-    }
-    
-    protected function PrintColor($index) {      
-        return $this->colortbl[$index];
     }
     
     protected function OpenTag($tag, $attr = '')
@@ -878,7 +883,7 @@
       if($symbol->symbol == '\'') {
         $enc = $this->GetSourceEncoding();
         $uchar = $this->DecodeUnicode($symbol->parameter, $enc);
-        $this->ApplyStyle($uchar);
+        $this->Write($uchar);
       }
     }
  
@@ -887,9 +892,9 @@
       // Convert special characters to HTML entities
       $txt = htmlspecialchars($text->text, ENT_NOQUOTES, 'UTF-8');
       if($this->encoding == 'HTML-ENTITIES')
-        $this->ApplyStyle($txt);
+        $this->Write($txt);
       else
-        $this->ApplyStyle(mb_convert_encoding($txt, $this->encoding, 'UTF-8'));
+        $this->Write(mb_convert_encoding($txt, $this->encoding, 'UTF-8'));
     }
     
     protected function GetSourceEncoding()
