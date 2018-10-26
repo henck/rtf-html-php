@@ -154,9 +154,13 @@
       $group = new RtfGroup();
       if($this->group != null) $group->parent = $this->group;
       if($this->root == null) {
+        // First group of the RTF document
         $this->group = $group;
         $this->root = $group;
+        // Create uc stack and insert the first default value
+        $this->uc = array(0);
       } else {
+        array_push($this->uc, end($this->uc));
         array_push($this->group->children, $group);
         $this->group = $group;
       }
@@ -175,10 +179,36 @@
       return False;
     }
  
+    /*
+     *  Checks for end of line (EOL)
+     */
+    protected function is_endofline()
+    {
+      if ($this->char == "\r" || $this->char == "\n") {
+        // Checks for a Windows/Acron type EOL
+        if( $this->rtf[$this->pos] == "\n" || $this->rtf[$this->pos] == "\r" ) {
+          $this->GetChar();
+        }
+        return TRUE;
+      }
+      return FALSE;
+    }
+    
+    /*
+     *  Checks for a space delimiter
+     */
+    protected function is_space_delimiter()
+    {
+      if ($this->char == " " || $this->is_endofline()) return TRUE;
+      return FALSE;
+    }
+
     protected function ParseEndGroup()
     {
       // Retrieve state of document from stack.
       $this->group = $this->group->parent;
+      // Retrieve last uc value from stack
+      array_pop($this->uc);
     }
  
     protected function ParseControlWord()
@@ -206,32 +236,50 @@
         $parameter = $parameter * 10 + $this->char;
         $this->GetChar();
       }
+      // if no parameter assume control word's default
+      // if no default then assign 0 to the parameter:
       if($parameter === null) $parameter = 1;
       
       // convert to a negative number when applicable
       if($negative) $parameter = -$parameter;
       
-      // If this is \u, then the parameter will be followed by 
-      // a character.
-      if($word == "u") {
-        // Ignore space delimiter
-        if ($this->char==' ') $this->GetChar();
-        
-        // if the replacement character is encoded as
-        // hexadecimal value \'hh then jump over it
-        if($this->char == '\\' && $this->rtf[$this->pos]=='\'')
-            $this->pos = $this->pos + 3;
-        
-        // Convert to UTF unsigned decimal code
-        if($negative) $parameter = 65536 + $parameter;                 
+      // Update uc value
+      if ($word == "uc") {
+        array_pop($this->uc);
+        $this->uc[] = $parameter;
       }
-      // If the current character is a space, then
-      // it is a delimiter. It is consumed.
-      // If it's not a space, then it's part of the next
-      // item in the text, so put the character back.
-      else
-      {
-        if($this->char != ' ') $this->pos--;  
+      
+      // skip space delimiter
+      if(!$this->is_space_delimiter()) $this->pos--;
+      
+      // If this is \u, then the parameter will be followed 
+      // by {$this->uc} characters.
+      if($word == "u") {
+        // Convert parameter to unsigned decimal unicode
+        if($negative) $parameter = 65536 + $parameter;
+        
+        // Will ignore replacement characters $uc times
+        $uc = end($this->uc);
+        while ($uc > 0) {
+          $this->GetChar();          
+          // If the replacement character is encoded as
+          // hexadecimal value \'hh then jump over it
+          if($this->char == '\\' && $this->rtf[$this->pos]=='\'')
+              $this->pos = $this->pos + 3;
+          
+          // Break if it's an RTF scope delimiter
+          elseif ($this->char == '{' || $this->char == '{')
+            break;
+          
+          // - To include an RTF delimiter in skippable data, it must be
+          //  represented using the appropriate control symbol (that is,
+          //  escaped with a backslash,) as in plain text.
+          // - Any RTF control word or symbol is considered a single character
+          //  for the purposes of counting skippable characters. for this reason
+          //  it's more appropriate to create à $skip flag and let the parse
+          //  function take care of the skippable characters
+          $uc--;
+        }
       }
              
       $rtfword = new RtfControlWord();
