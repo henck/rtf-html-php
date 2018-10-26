@@ -426,6 +426,14 @@
     }
   }
  
+  class RtfFont
+  {
+      public $fontfamily;
+      public $fontname;
+      public $charset;
+      public $codepage;         
+  }
+ 
   class RtfState
   {
     public static $fonttbl = array();
@@ -454,7 +462,7 @@
       $this->Reset();
     }
  
-    public function Reset()
+    public function Reset($defaultFont = null)
     {
       $this->bold = False;
       $this->italic = False;
@@ -464,6 +472,7 @@
       $this->fontsize = 0;
       $this->fontcolor = null;
       $this->background = null;
+      $this->font = isset($defaultFont) ? $defaultFont : null;
     }
     
     public function isLike($state)
@@ -561,6 +570,73 @@
       return substr($this->output ,0, -3);
     }
     
+     protected function ExtractFontTable($fontTblGrp)
+    {
+       // {' \fonttbl (<fontinfo> | ('{' <fontinfo> '}'))+ '}'
+       // <fontnum><fontfamily><fcharset>?<fprq>?<panose>?
+       // <nontaggedname>?<fontemb>?<codepage>? <fontname><fontaltname>? ';'
+
+      $fonttbl = array();
+      $c = count($fontTblGrp);
+      
+      for ($i=1;$i<$c;$i++){
+        $fname = '';
+        $fN = null;
+        foreach ($fontTblGrp[$i]->children as $child){
+          
+          if ($child instanceof RtfControlWord){
+            switch ($child->word) {
+              case 'f':
+                $fN = $child->parameter;
+                $fonttbl[$fN] = new RtfFont();
+                break;
+
+              // Font family names
+              case 'froman': $fonttbl[$fN]->fontfamily = "serif"; break;
+              case 'fswiss': $fonttbl[$fN]->fontfamily = "sans-serif"; break;
+              case 'fmodern': $fonttbl[$fN]->fontfamily = "monospace"; break;
+              case 'fscript': $fonttbl[$fN]->fontfamily = "cursive"; break;
+              case 'fdecor': $fonttbl[$fN]->fontfamily = "fantasy"; break;
+              // case 'fnil': break; // default font
+              // case 'ftech': break; // symbol
+              // case 'fbidi': break; // bidirectional font                      
+              case 'fcharset': // charset
+                $fonttbl[$fN]->charset = 
+                  $this->GetEncodingFromCharset($child->parameter);
+                break;              
+              case 'cpg': // code page
+                $fonttbl[$fN]->codepage = 
+                  $this->GetEncodingFromCodepage($child->parameter);
+                break;
+              case 'fprq': // Font pitch
+                $fonttbl[$fN]->fprq = $child->parameter;
+                break;
+              default: continue;
+            }
+          } elseif ($child instanceof RtfText) {
+            // Save font name
+            $fname .= $child->text;
+          } elseif ($child instanceof RtfGroup) {
+            // possible subgroups:
+            // '{\*' \falt #PCDATA '}' = alternate font name
+            // '{\*' \fontemb <fonttype> <fontfname>? <data>? '}'
+            // '{\*' \fontfile <codepage>? #PCDATA '}'
+            // '{\*' \panose <data> '}'
+            continue;
+          } elseif ($child instanceof RtfControlSymbol) {
+            // the only authorized symbol here is '*':
+            // \*\fname = non tagged file name (only WordPad uses it)
+            continue;
+          }        
+        }
+        // Remove end ; delimiter from font name
+        $fonttbl[$fN]->fontname = substr($fname,0,-1);
+        
+        // Save extracted Font
+        RtfState::$fonttbl = $fonttbl;
+      }      
+    }
+    
     protected function ExtractColorTable($colorTblGrp) {
       // {\colortbl;\red0\green0\blue0;}
       // Index 0 of the RTF color table  is the 'auto' color
@@ -590,9 +666,10 @@
     protected function FormatGroup($group)
     {
       // Can we ignore this group?      
-      // Font table extraction not yet supported
-      if($group->GetType() == "fonttbl") return;      
-      // Extract color table
+      if($group->GetType() == "fonttbl") {
+        $this->ExtractFontTable($group->children);
+        return;
+      }
       elseif($group->GetType() == "colortbl") {
         $this->ExtractColorTable($group->children);
         return;      
@@ -626,8 +703,9 @@
     {
       // plain: Reset font formatting properties to default.
       // pard: Reset to default paragraph properties.
-      if($word->word == "plain" || $word->word == "pard"){ $this->state->Reset();
-      
+      if($word->word == "plain" || $word->word == "pard"){
+        $this->state->Reset($this->defaultFont);
+        
       // Font formatting properties:
       }elseif($word->word == "b"){ $this->state->bold = $word->parameter; // bold
       }elseif($word->word == "i"){ $this->state->italic = $word->parameter; // italic
@@ -636,6 +714,7 @@
       }elseif($word->word == "strike"){ $this->state->strike = $word->parameter; // strike through
       }elseif($word->word == "v"){ $this->state->hidden = $word->parameter; // hidden
       }elseif($word->word == "fs"){ $this->state->fontsize = ceil(($word->parameter / 24) * 16); // font size
+      }elseif($word->word == "f"){ $this->state->font = $word->parameter;
       
       // Colors:
       }elseif ($word->word == "cf" || $word->word == "chcfpat") {
@@ -671,6 +750,10 @@
         $this->CloseTags();
         // Begin a new paragraph
         $this->OpenTag('p');
+      
+      // Store Default Font
+      }elseif($word->word == "deff") {
+        $this->defaultFont = $word->parameter;        
       }
     }
     
@@ -707,7 +790,12 @@
         // if($this->state->end_underline) {$span .= "text-decoration:none;";}
         if($this->state->strike) $style .= "text-decoration:line-through;";
         if($this->state->hidden) $style .= "display:none;";
-        if($this->state->fontsize != 0) $style .= "font-size:{$this->state->fontsize}px;";
+        // Font:
+        if(isset($this->font)) {
+          if (isset(self::$fonttbl[$this->font]->fontfamily))
+            $style .= "font-family:" . self::$fonttbl[$this->font]->fontfamily . ";";
+        }
+        if($this->state->fontsize != 0) $style .= "font-size:{$this->state->fontsize}px;";        
         // Font color:
         if(isset($this->state->fontcolor)) {
           // Check if color is set. in particular when it's the 'auto' color
