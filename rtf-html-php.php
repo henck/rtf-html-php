@@ -249,7 +249,7 @@
         $this->uc[] = $parameter;
       }
       
-      // skip space delimiter
+      // Skip space delimiter
       if(!$this->is_space_delimiter()) $this->pos--;
       
       // If this is \u, then the parameter will be followed 
@@ -275,8 +275,8 @@
           //  represented using the appropriate control symbol (that is,
           //  escaped with a backslash,) as in plain text.
           // - Any RTF control word or symbol is considered a single character
-          //  for the purposes of counting skippable characters. for this reason
-          //  it's more appropriate to create à $skip flag and let the parse
+          //  for the purposes of counting skippable characters. For this reason
+          //  it's more appropriate to create à $skip flag and let the Parse()
           //  function take care of the skippable characters
           $uc--;
         }
@@ -368,7 +368,8 @@
       $rtftext = new RtfText();
       $rtftext->text = $text;
 
-      // If group does not exist, then this is not a valid RTF file. Throw an exception.
+      // If group does not exist, then this is not a valid RTF file.
+      // Throw an exception.
       if($this->group == null) {
         $err = "Parse error occured";
         trigger_error($err);
@@ -379,7 +380,8 @@
     }
  
     /*
-     * Attempt to parse an RTF string. Parsing returns TRUE on success or FALSE on failure
+     * Attempt to parse an RTF string. Parsing returns TRUE on success
+     * or FALSE on failure
      */
     public function Parse($rtf)
     {
@@ -426,6 +428,27 @@
  
   class RtfState
   {
+    public static $fonttbl = array();
+    public static $colortbl = array();
+    private static $highlight = array(
+        1 => 'Black',
+        2 => 'Blue',
+        3 => 'Cyan',
+        4 => 'Green',
+        5 => 'Magenta',
+        6 => 'Red',
+        7 => 'Yellow',
+        8 => 'Unused',
+        9 =>  'DarkBlue',
+        10 => 'DarkCyan',
+        11 => 'DarkGreen',
+        12 => 'DarkMagenta',
+        13 => 'DarkRed',
+        14 => 'DarkYellow',
+        15 => 'DarkGray',
+        16 => 'LightGray'
+    );
+    
     public function __construct()
     {
       $this->Reset();
@@ -441,6 +464,62 @@
       $this->fontsize = 0;
       $this->fontcolor = null;
       $this->background = null;
+    }
+    
+    public function isLike($state)
+    {
+      if (!($state instanceof RtfState))
+        return False;
+      if ($this->bold != $state->bold)
+        return False;
+      if ($this->italic != $state->italic)
+        return False;
+      if ($this->underline != $state->underline)
+        return False;
+      if ($this->strike != $state->strike)
+        return False;
+      if ($this->hidden != $state->hidden)
+        return False;
+      if ($this->fontsize != $state->fontsize)
+        return False;
+      
+      // Compare Font Color
+      if (isset($this->fontcolor)) {
+        if (!isset($state->fontcolor))
+          return False;
+        elseif ($this->fontcolor != $state->fontcolor)
+          return False;
+      } elseif (isset($state->fontcolor))
+        return False;
+      
+      // Compare Background-color
+      if (isset($this->background)) {
+        if (!isset($state->background))
+          return False;
+        elseif ($this->background != $state->background)
+          return False;
+      } elseif (isset($state->background))
+        return False;
+      
+      // Compare Background-color
+      if (isset($this->hcolor)) {
+        if (!isset($state->hcolor))
+          return False;
+        elseif ($this->hcolor != $state->hcolor)
+          return False;
+      } elseif (isset($state->hcolor))
+        return False;
+      
+      if (isset($this->font)) {
+        if (!isset($state->font))
+          return False;
+        elseif (  self::$fonttbl[$this->font]->fontfamily != 
+                  self::$fonttbl[$state->font]->fontfamily)
+          return False;        
+      } elseif (isset($state->font))
+        return False;
+      
+      return True;
     }
   }
  
@@ -505,7 +584,7 @@
           }
         }
       }
-      $this->colortbl = $colortbl;
+      RtfState::$colortbl = $colortbl;
     }
  
     protected function FormatGroup($group)
@@ -559,11 +638,12 @@
       }elseif($word->word == "fs"){ $this->state->fontsize = ceil(($word->parameter / 24) * 16); // font size
       
       // Colors:
-      }elseif ($word->word == "cf") { //|| $word->word == "chcfpat")
-          $this->state->fontcolor = $word->parameter;
-      }elseif ($word->word == "cb" || $word->word == "chcbpat" || $word->word == "highlight") {
-           $this->state->background = $word->parameter;
-      
+      }elseif ($word->word == "cf" || $word->word == "chcfpat") {
+        $this->state->fontcolor = $word->parameter;
+      }elseif ($word->word == "cb" || $word->word == "chcbpat") {
+        $this->state->background = $word->parameter;
+      }elseif ($word->word == "highlight") {
+        $this->state->hcolor = $word->parameter;
       // RTF special characters:
       }elseif($word->word == "lquote"){ $this->output .= "&lsquo;"; // &#145; &#8216;
       }elseif($word->word == "rquote"){ $this->output .= "&rsquo;";  // &#146; &#8217;
@@ -615,8 +695,8 @@
       // 1st case: style change occured
       // 2nd case: there is no change in style but the already created 'span'
       // element is somehow closed (ex. because of an end of paragraph)
-      if  ($this->state != $this->previousState ||
-          ($this->state == $this->previousState && !$this->openedTags['span']))
+      if  (!$this->state->isLike($this->previousState) ||
+          ($this->state->isLike($this->previousState) && !$this->openedTags['span']))
       {
         $style = "";
         if($this->state->bold) $style .= "font-weight:bold;";
@@ -631,15 +711,20 @@
         // Font color:
         if(isset($this->state->fontcolor)) {
           // Check if color is set. in particular when it's the 'auto' color
-          if ($this->colortbl[$this->state->fontcolor])
-            $style .= "color:".$this->PrintColor($this->state->fontcolor).";";
+          if (RtfState::$colortbl[$this->state->fontcolor])
+            $style .= "color:" . RtfState::$colortbl[$this->state->fontcolor] . ";";
         }
         // Background color:
         if (isset($this->state->background)) {
           // Check if color is set. in particular when it's the 'auto' color
-          if ($this->colortbl[$this->state->fontcolor])
-            $style .= "background-color:".$this->PrintColor($this->state->background).";";
+          if (RtfState::$colortbl[$this->state->fontcolor])
+            $style .= "background-color:" . RtfState::$colortbl[$this->state->background] . ";";
+        // Highlight color:
+        } elseif (isset($this->hcolor)) {       
+          if (isset(self::$highlight[$this->hcolor]))
+            $style .= "background-color:" . self::$highlight[$this->hcolor] . ";";
         }
+        
         // Keep track of preceding style
         $this->previousState = clone $this->state;
         
