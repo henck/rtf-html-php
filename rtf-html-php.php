@@ -297,7 +297,15 @@
       // Symbols ordinarily have no parameter. However, 
       // if this is \', then it is followed by a 2-digit hex-code:
       $parameter = 0;
-      if($symbol == '\'') {
+      // Treat EOL symbols as \par control word
+      if ($this->is_endofline()) {
+        $rtfword = new RtfControlWord();
+        $rtfword->word = 'par';
+        $rtfword->parameter = $parameter;
+        array_push($this->group->children, $rtfword);
+        return;
+      
+      } elseif($symbol == '\'') {
         $this->GetChar(); 
         $parameter = $this->char;
         $this->GetChar(); 
@@ -884,6 +892,12 @@
         $enc = $this->GetSourceEncoding();
         $uchar = $this->DecodeUnicode($symbol->parameter, $enc);
         $this->Write($uchar);
+      }elseif ($symbol->symbol == '~') { 
+        $this->Write("&nbsp;"); // Non breaking space
+      }elseif ($symbol->symbol == '-') { 
+        $this->Write("&#173;"); // Optional hyphen
+      }elseif ($symbol->symbol == '_') {
+        $this->Write("&#8209;"); // Non breaking hyphen
       }
     }
  
