@@ -51,8 +51,12 @@
       if(sizeof($this->children) == 0) return null;
       // First child not a control word?
       $child = $this->children[0];
-      if(!$child instanceof RtfControlWord) return null;
+      if($child instanceof RtfControlWord)
       return $child->word;
+      elseif ($child instanceof RtfControlSymbol)
+        return ($child->symbol == '*') ? '*' : null;
+      
+      return null;
     }    
  
     public function IsDestination()
@@ -434,6 +438,42 @@
     }
   }
  
+  class RtfImage
+  {
+    public function __construct()
+    {
+      $this->Reset();
+    }
+    
+    public function Reset()
+    {
+      $this->format = 'bmp';
+      $this->width = 0; // in xExt if wmetafile otherwise in px
+      $this->height = 0; // in yExt if wmetafile otherwise in px
+      $this->goalWidth = 0; // in twips
+      $this->goalHeight = 0; // in twips
+      $this->pcScaleX = 100; // 100%
+      $this->pcScaleY = 100; // 100%
+      $this->binarySize = null; // Number of bytes of the binary data
+      $this->ImageData = null; // Binary or Hexadecimal Data
+    }
+    
+    public function PrintImage()
+    {
+      // <img src="data:image/{FORMAT};base64,{#BDATA}" />
+      $output = "<img src=\"data:image/{$this->format};base64,";
+      
+      if (isset($this->binarySize)) { // process binary data
+        return;
+      } else { // process hexadecimal data
+        $output .= base64_encode(pack('H*',$this->ImageData));
+      }
+      
+      $output .= "\" />";
+      return $output;
+    }
+  }
+  
   class RtfFont
   {
       public $fontfamily;
@@ -611,7 +651,7 @@
       // Create the first paragraph
       $this->OpenTag('p');
       // Begin format
-      $this->FormatGroup($root);
+      $this->ProcessGroup($root);
       // Remove the last opened <p> tag and return
       return substr($this->output ,0, -3);
     }
@@ -709,43 +749,103 @@
       RtfState::$colortbl = $colortbl;
     }
  
-    protected function FormatGroup($group)
+    protected function ExtractImage($pictGrp)
+    {      
+      $Image = new RtfImage();
+      foreach ($pictGrp as $child) {
+        if ($child instanceof RtfControlWord) {
+          switch ($child->word) {
+            // Picture Format
+            case "emfblip": $Image->format = 'emf'; break;
+            case "pngblip": $Image->format = 'png'; break;
+            case "jpegblip": $Image->format = 'jpeg'; break;
+            case "macpict": $Image->format = 'pict'; break;
+            // case "wmetafile": $Image->format = 'bmp'; break;
+            
+            // Picture size and scaling
+            case "picw": $Image->width = $child->parameter; break;
+            case "pich": $Image->height = $child->parameter; break;
+            case "picwgoal": $Image->goalWidth = $child->parameter; break;
+            case "pichgoal": $Image->goalHeight = $child->parameter; break;
+            case "picscalex": $Image->pcScaleX = $child->parameter; break;
+            case "picscaley": $Image->pcScaleY = $child->parameter; break;
+            
+           // Binary or Hexadecimal Data ?
+            case "bin": $Image->binarySize = $child->parameter; break;
+            default: break;
+          }
+          
+        } elseif ($child instanceof RtfText) { // store Data
+          $Image->ImageData = $child->text;
+        }
+      }
+      // output Image
+      $this->output .= $Image->PrintImage();
+      unset($Image);
+    }
+ 
+    protected function ProcessGroup($group)
     {
       // Can we ignore this group?      
-      if($group->GetType() == "fonttbl") {
-        $this->ExtractFontTable($group->children);
-        return;
-      }
-      elseif($group->GetType() == "colortbl") {
-        $this->ExtractColorTable($group->children);
-        return;      
-      } 
-      // Stylesheet extraction not yet supported
-      elseif($group->GetType() == "stylesheet") return;
-      // Ignore Document information
-      elseif($group->GetType() == "info") return;
+      switch ($group->GetType())
+      {
+        case "fonttbl": // Extract Font table
+          $this->ExtractFontTable($group->children);
+          return;
+        case "colortbl": // Extract color table
+          $this->ExtractColorTable($group->children);
+          return;      
+        case "stylesheet":
+          // Stylesheet extraction not yet supported
+          return;
+        case "info":
+          // Ignore Document information
+          return;
+        case "pict":
+          $this->ExtractImage($group->children);
+          return;
+        case "nonshppict":
+          // Ignore alternative images
+          return;        
+        case "*": // Process destionation
+          $this->ProcessDestination($group->children);
+          return;
+      }     
+      
       // Pictures extraction not yet supported
-      if(substr($group->GetType(), 0, 4) == "pict") return;
-      // Ignore Destionations
-      if($group->IsDestination()) return;
- 
+      //if(substr($group->GetType(), 0, 4) == "pict") return;
+      
       // Push a new state onto the stack:
       $this->state = clone $this->state;
       array_push($this->states, $this->state);
  
       foreach($group->children as $child)
-      {
-        if($child instanceof RtfGroup) $this->FormatGroup($child);
-        elseif($child instanceof RtfControlWord) $this->FormatControlWord($child);
-        elseif($child instanceof RtfControlSymbol) $this->FormatControlSymbol($child);
-        elseif($child instanceof RtfText) $this->FormatText($child);
-      }
+        $this->FormatEntry($child);
  
       // Pop state from stack
       array_pop($this->states);
       $this->state = $this->states[sizeof($this->states)-1];
     }
- 
+    
+    protected function ProcessDestination($dest)
+    {
+      if (!$dest[1] instanceof RtfControlWord) return;
+      // Check if this is a Word 97 picture
+      if ($dest[1]->word == "shppict") {
+        $c = count($dest);
+        for ($i=2;$i<$c;$i++)
+          $this->FormatEntry($dest[$i]);
+        }
+    }
+    
+    protected function FormatEntry($entry)
+    {
+      if($entry instanceof RtfGroup) $this->ProcessGroup($entry);
+      elseif($entry instanceof RtfControlWord) $this->FormatControlWord($entry);
+      elseif($entry instanceof RtfControlSymbol) $this->FormatControlSymbol($entry);
+      elseif($entry instanceof RtfText) $this->FormatText($entry);
+    }
+    
     protected function FormatControlWord($word)
     {
       // plain: Reset font formatting properties to default.
