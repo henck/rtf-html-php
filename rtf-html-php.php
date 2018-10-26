@@ -761,18 +761,23 @@
       }
     }
     
-    protected function DecodeUnicode($code)
+    protected function DecodeUnicode($code, $srcEnc = 'UTF-8')
     {
-      $htmlentity = "&#{$code};";
-      if($this->encoding == 'HTML-ENTITIES') return $htmlentity;
-      else {
-        // Character codes 128 to 159 (U+0080 to U+009F) are not allowed in HTML
-        if($code > 127 && $code < 160) {
-          $utf = mb_convert_encoding(chr($code), 'UTF-8', 'windows-1252');
-          $htmlentity = htmlentities($utf, ENT_QUOTES, 'UTF-8');
-        }
-        $mbChar = mb_convert_encoding($htmlentity, $this->encoding, 'HTML-ENTITIES');
-        return $mbChar;
+      $utf8 = '';
+      
+      if ($srcEnc != 'UTF-8') { // convert character to Unicode
+        $utf8 = iconv($srcEnc, 'UTF-8', chr($code));
+      }
+      
+      if ($this->encoding == 'HTML-ENTITIES') {
+        return $utf8 ? "&#{$this->ord_utf8($utf8)};" : "&#{$code};";      
+        
+      } elseif ($this->encoding == 'UTF-8') {
+        return $utf8 ? $utf8 : mb_convert_encoding("&#{$code};", $this->encoding, 'HTML-ENTITIES');
+        
+      } else {
+        return $utf8 ? mb_convert_encoding($utf8, $this->encoding, 'UTF-8') :
+          mb_convert_encoding("&#{$code};", $this->encoding, 'HTML-ENTITIES');
       }
     }
     
@@ -871,7 +876,8 @@
     protected function FormatControlSymbol($symbol)
     {
       if($symbol->symbol == '\'') {
-        $uchar = $this->DecodeUnicode($symbol->parameter);
+        $enc = $this->GetSourceEncoding();
+        $uchar = $this->DecodeUnicode($symbol->parameter, $enc);
         $this->ApplyStyle($uchar);
       }
     }
@@ -884,6 +890,18 @@
         $this->ApplyStyle($txt);
       else
         $this->ApplyStyle(mb_convert_encoding($txt, $this->encoding, 'UTF-8'));
+    }
+    
+    protected function GetSourceEncoding()
+    {
+      if (isset($this->state->font)) {
+        if (isset(RtfState::$fonttbl[$this->state->font]->codepage)) {
+          return RtfState::$fonttbl[$this->state->font]->codepage;
+        
+        } elseif (isset(RtfState::$fonttbl[$this->state->font]->charset)) {
+          return RtfState::$fonttbl[$this->state->font]->charset;
+        }
+      } else return $this->RTFencoding;
     }
     
     protected function GetEncodingFromCharset($fcharset)
@@ -968,6 +986,34 @@
         // Debug Error
         trigger_error("Unknown codepage: {$cpg}");
       }
+    }
+    
+    protected function ord_utf8($chr)
+    {
+      $ord0 = ord($chr);
+      if ($ord0 >= 0 && $ord0 <= 127)
+        return $ord0;
+
+      $ord1 = ord($chr[1]);
+      if ($ord0 >= 192 && $ord0 <= 223)
+        return ($ord0 - 192) * 64 + ($ord1 - 128);
+
+      $ord2 = ord($chr[2]);
+      if ($ord0 >= 224 && $ord0 <= 239)
+        return ($ord0 - 224) * 4096 + ($ord1 - 128) * 64 + ($ord2 - 128);
+
+      $ord3 = ord($chr[3]);
+      if ($ord0 >= 240 && $ord0 <= 247)
+        return ($ord0 - 240) * 262144 + ($ord1 - 128) * 4096 + ($ord2 - 128) * 64 + ($ord3 - 128);
+
+      $ord4 = ord($chr[4]);
+      if ($ord0 >= 248 && $ord0 <= 251)
+        return ($ord0 - 248) * 16777216 + ($ord1 - 128) * 262144 + ($ord2 - 128) * 4096 + ($ord3 - 128) * 64 + ($ord4 - 128);
+
+      if ($ord0 >= 252 && $ord0 <= 253)
+        return ($ord0 - 252) * 1073741824 + ($ord1 - 128) * 16777216 + ($ord2 - 128) * 262144 + ($ord3 - 128) * 4096 + ($ord4 - 128) * 64 + (ord($chr[5]) - 128);
+	
+      trigger_error("Invalid Unicode character: {$chr}");
     }
   }
 
