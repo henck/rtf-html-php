@@ -620,6 +620,8 @@
  
   class RtfHtml
   {
+    private $output = '';
+
     // Initialise Encoding
     public function __construct($encoding = 'HTML-ENTITIES')
     {
