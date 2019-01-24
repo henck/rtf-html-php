@@ -916,7 +916,7 @@
       $utf8 = '';
       
       if ($srcEnc != 'UTF-8') { // convert character to Unicode
-        $utf8 = iconv($srcEnc, 'UTF-8', chr($code));
+        $utf8 = iconv($srcEnc, 'UTF-8', mb_chr($code));
       }
       
       if ($this->encoding == 'HTML-ENTITIES') {
