@@ -906,9 +906,9 @@
       }elseif($word->word == "deff") {
         $this->defaultFont = $word->parameter;        
       }elseif(in_array($word->word, array('ansi','mac','pc','pca'))){
-        $this->RTFEncoding = $this->GetEncodingFromCodepage($word->word);
+        $this->RTFencoding = $this->GetEncodingFromCodepage($word->word);
       }elseif ($word->word == "ansicpg" && $word->parameter) {
-        $this->RTFEncoding = $this->GetEncodingFromCodepage($word->parameter);
+        $this->RTFencoding = $this->GetEncodingFromCodepage($word->parameter);
       }
     }
     
