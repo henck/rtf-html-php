@@ -162,7 +162,7 @@
         $this->group = $group;
         $this->root = $group;
         // Create uc stack and insert the first default value
-        $this->uc = array(0);
+        $this->uc = array(1);
       } else {
         array_push($this->uc, end($this->uc));
         array_push($this->group->children, $group);
@@ -620,8 +620,8 @@
  
   class RtfHtml
   {
-	  public $output = '';
-	  public $encoding;
+    private $output = '';
+    private $encoding;
 
     // Initialise Encoding
     public function __construct($encoding = 'HTML-ENTITIES')
@@ -873,6 +873,7 @@
         $this->state->background = $word->parameter;
       }elseif ($word->word == "highlight") {
         $this->state->hcolor = $word->parameter;
+        
       // RTF special characters:
       }elseif($word->word == "lquote"){ $this->Write("&lsquo;"); // &#145; &#8216;
       }elseif($word->word == "rquote"){ $this->Write("&rsquo;");  // &#146; &#8217;
@@ -901,13 +902,13 @@
         // Begin a new paragraph
         $this->OpenTag('p');
       
-      // Store Default Font
+      // Store defaults
       }elseif($word->word == "deff") {
         $this->defaultFont = $word->parameter;        
       }elseif(in_array($word->word, array('ansi','mac','pc','pca'))){
-        $this->RTFEncoding = $this->GetEncodingFromCodepage($word->word);
+        $this->RTFencoding = $this->GetEncodingFromCodepage($word->word);
       }elseif ($word->word == "ansicpg" && $word->parameter) {
-        $this->RTFEncoding = $this->GetEncodingFromCodepage($word->parameter);
+        $this->RTFencoding = $this->GetEncodingFromCodepage($word->parameter);
       }
     }
     
@@ -1023,7 +1024,8 @@
         } elseif (isset(RtfState::$fonttbl[$this->state->font]->charset)) {
           return RtfState::$fonttbl[$this->state->font]->charset;
         }
-      } else return $this->RTFencoding;
+      }
+      return $this->RTFencoding;
     }
     
     protected function GetEncodingFromCharset($fcharset)
