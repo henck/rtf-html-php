@@ -700,7 +700,7 @@
               case 'fprq': // Font pitch
                 $fonttbl[$fN]->fprq = $child->parameter;
                 break;
-              default: continue;
+              default: continue 2;
             }
           } elseif ($child instanceof RtfText) {
             // Save font name
