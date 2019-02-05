@@ -700,12 +700,14 @@
               case 'fprq': // Font pitch
                 $fonttbl[$fN]->fprq = $child->parameter;
                 break;
-              default: continue 2;
+              default: break;
             }
           } elseif ($child instanceof RtfText) {
             // Save font name
             $fname .= $child->text;
-          } elseif ($child instanceof RtfGroup) {
+          } 
+	  /*
+	  elseif ($child instanceof RtfGroup) {
             // possible subgroups:
             // '{\*' \falt #PCDATA '}' = alternate font name
             // '{\*' \fontemb <fonttype> <fontfname>? <data>? '}'
@@ -716,7 +718,8 @@
             // the only authorized symbol here is '*':
             // \*\fname = non tagged file name (only WordPad uses it)
             continue;
-          }        
+          } 
+	  */       
         }
         // Remove end ; delimiter from font name
         $fonttbl[$fN]->fontname = substr($fname,0,-1);
