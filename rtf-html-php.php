@@ -622,6 +622,7 @@
   {
     private $output = '';
     private $encoding;
+    private $defaultFont;
 
     // Initialise Encoding
     public function __construct($encoding = 'HTML-ENTITIES')
