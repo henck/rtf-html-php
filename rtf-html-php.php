@@ -656,8 +656,11 @@
       $this->OpenTag('p');
       // Begin format
       $this->ProcessGroup($root);
-      // Remove the last opened <p> tag and return
-      return substr($this->output ,0, -3);
+      if (substr($this->output, -3) == "<p>") {
+        // If the last 3 chars open a new <p> tag, remove it
+        $this->output = substr($this->output, 0, -3);
+      }
+      return $this->output;
     }
     
      protected function ExtractFontTable($fontTblGrp)
