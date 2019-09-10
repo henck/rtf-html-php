@@ -1,5 +1,6 @@
 # rtf-html-php
-RTF to HTML converter in PHP
+
+_An RTF to HTML converter in PHP_
 
 In a recent project, I desperately needed an RTF to HTML converter written in PHP. Googling around turned up some matches, but I could not get them to work properly. Also, one of them called `passthru()` to use a RTF2HTML executable, which is something I didn’t want. I was looking for an RTF to HTML converter written purely in PHP.
 
@@ -7,13 +8,13 @@ Since I couldn’t find anything ready-made, I sat down and coded one up myself.
 
 ## How to use it
 
-Include the file rtf-html-php.php somewhere in your project. Then do this:
+Include the file `rtf-html-php.php` somewhere in your project. Then do this:
 
     $reader = new RtfReader();
     $rtf = file_get_contents("test.rtf"); // or use a string
     $result = $reader->Parse($rtf);
     
-The parser will return TRUE if the RTF was parsed successfully, or FALSE if the RTF was malformed.
+The parser will return `true` if the RTF was parsed successfully, or `false` if the RTF was malformed.
 
 If you’d like to see what the parser read (for debug purposes), then call this (but only if the RTF was successfully parsed):
 
