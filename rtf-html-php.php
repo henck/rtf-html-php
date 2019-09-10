@@ -656,11 +656,11 @@
       $this->OpenTag('p');
       // Begin format
       $this->ProcessGroup($root);
-      // Remove the last opened <p> tag and return
-      return substr($this->output ,0, -3);
+      // Remove any final unclosed 'p' tag and return result:
+      return $this->openedTags['p'] ? substr($this->output, 0, -3) : $this->output;
     }
     
-     protected function ExtractFontTable($fontTblGrp)
+    protected function ExtractFontTable($fontTblGrp)
     {
        // {' \fonttbl (<fontinfo> | ('{' <fontinfo> '}'))+ '}'
        // <fontnum><fontfamily><fcharset>?<fprq>?<panose>?
