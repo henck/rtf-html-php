@@ -10,8 +10,16 @@
             "email": "alex.vanoostenrijk@gmail.com"
         }
     ],
+    "scripts": {
+      "test": [
+        "phpunit tests"
+      ]
+    },
     "require": {},
     "autoload": {
         "classmap": ["rtf-html-php.php"]
+    },
+    "require-dev": {
+        "phpunit/phpunit": "7"
     }
 }
