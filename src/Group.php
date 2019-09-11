@@ -40,10 +40,9 @@ class Group extends Element
     return $child->symbol == '*';
   }
 
-  public function dump($level = 0)
+  public function toString(int $level = 0)
   {
-    $this->Indent($level);
-    echo "{\n";
+    $str = str_repeat("  ", $level) .  "{\n";
 
     foreach($this->children as $child)
     {
@@ -57,10 +56,9 @@ class Group extends Element
         if (substr($child->GetType(), 0, 4) == "pict") continue;
         if ($child->IsDestination()) continue;
       }
-      $child->dump($level + 2);
+      $str .= $child->toString($level + 1);
     }
 
-    $this->Indent($level);
-    echo "}\n";
+    return $str . str_repeat("  ", $level) . "}\n";
   }
 }

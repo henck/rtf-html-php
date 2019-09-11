@@ -19,10 +19,10 @@ $document = new Document($rtf); // or use a string directly
 
 `Document` will raise an exception if the RTF document could not be parsed. Parse errors will generate PHP notices.
 
-If you’d like to see what the parser read (for debug purposes), then call this (but only if the RTF was successfully parsed):
+If you’d like to see what the parser read (for debug purposes), then call this:
 
 ```php
-$document->dump();
+echo $document;
 ```
 
 To convert the parser’s parse tree to HTML, call this (but only if the RTF was successfully parsed):

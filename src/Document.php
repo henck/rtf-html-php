@@ -329,7 +329,8 @@ class Document
     }
   }
 
-  public function dump() {
-    if($this->root) $this->root->dump();
+  public function __toString() {
+    if(!$this->root) return "No root group";
+    return $this->root->toString();
   }
 }

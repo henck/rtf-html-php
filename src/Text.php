@@ -9,14 +9,13 @@ class Text extends Element
   /*
    * Create a new Text instance with string content.
    */
-  public function __construct($text)
+  public function __construct(string $text)
   {
     $this->text = $text;
   }
 
-  public function dump($level)
+  public function toString(int $level)
   {
-    $this->Indent($level);
-    echo "TEXT {$this->text}\n";
+    return str_repeat("  ", $level) . "TEXT {$this->text}\n";
   }    
 }

@@ -7,9 +7,8 @@ class ControlSymbol extends Element
   public $symbol;
   public $parameter = 0;
 
-  public function dump($level)
+  public function toString(int $level)
   {
-    $this->Indent($level);
-    echo "SYMBOL {$this->symbol} ({$this->parameter})\n";
+    return str_repeat("  ", $level) . "SYMBOL {$this->symbol} ({$this->parameter})\n";
   }    
 }

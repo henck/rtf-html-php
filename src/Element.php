@@ -8,8 +8,4 @@ namespace RtfHtmlPhp;
  */
 class Element
 {
-  protected function Indent($level)
-  {
-    for($i = 0; $i < $level * 2; $i++) echo " ";
-  }
 }
