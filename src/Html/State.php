@@ -7,15 +7,15 @@ class State
   public static $fonttbl = array();
   public static $colortbl = array();
   private static $highlight = array(
-      1 => 'Black',
-      2 => 'Blue',
-      3 => 'Cyan',
-      4 => 'Green',
-      5 => 'Magenta',
-      6 => 'Red',
-      7 => 'Yellow',
-      8 => 'Unused',
-      9 =>  'DarkBlue',
+      1  => 'Black',
+      2  => 'Blue',
+      3  => 'Cyan',
+      4  => 'Green',
+      5  => 'Magenta',
+      6  => 'Red',
+      7  => 'Yellow',
+      8  => 'Unused',
+      9  => 'DarkBlue',
       10 => 'DarkCyan',
       11 => 'DarkGreen',
       12 => 'DarkMagenta',
@@ -30,16 +30,24 @@ class State
     $this->Reset();
   }
 
+  /* 
+   * Store a font in the font table at the specified index.
+   */
+  public static function SetFont(int $index, Font $font) {
+    State::$fonttbl[$index] = $font;
+  }
+
   public function Reset($defaultFont = null)
   {
-    $this->bold = False;
-    $this->italic = False;
-    $this->underline = False;
-    $this->strike = False;
-    $this->hidden = False;
+    $this->bold = false;
+    $this->italic = false;
+    $this->underline = false;
+    $this->strike = false;
+    $this->hidden = false;
     $this->fontsize = 0;
     $this->fontcolor = null;
     $this->background = null;
+    $this->hcolor = null;
     $this->font = isset($defaultFont) ? $defaultFont : null;
   }
   
@@ -56,8 +64,8 @@ class State
     if($this->strike) $style .= "text-decoration:line-through;";
     if($this->hidden) $style .= "display:none;";
     if(isset($this->font)) {
-      if (isset(self::$fonttbl[$this->font]->fontfamily))
-        $style .= "font-family:" . self::$fonttbl[$this->font]->fontfamily . ";";
+      $font = self::$fonttbl[$this->font];
+      $style .= $font->toStyle();
     }
     if($this->fontsize != 0) $style .= "font-size:{$this->fontsize}px;";
     // Font color:
@@ -81,59 +89,28 @@ class State
     return $style;
   }
 
-  public function isLike($state)
+  /* 
+   * Check whether this State is equal to another State.
+   */
+  public function equals($state)
   {
-    if (!($state instanceof State))
-      return False;
-    if ($this->bold != $state->bold)
-      return False;
-    if ($this->italic != $state->italic)
-      return False;
-    if ($this->underline != $state->underline)
-      return False;
-    if ($this->strike != $state->strike)
-      return False;
-    if ($this->hidden != $state->hidden)
-      return False;
-    if ($this->fontsize != $state->fontsize)
-      return False;
+    if (!($state instanceof State)) return false;
+
+    if ($this->bold != $state->bold) return false;
+    if ($this->italic != $state->italic) return false;
+    if ($this->underline != $state->underline) return false;
+    if ($this->strike != $state->strike) return false;
+    if ($this->hidden != $state->hidden) return false;
+    if ($this->fontsize != $state->fontsize) return false;
     
-    // Compare Font Color
-    if (isset($this->fontcolor)) {
-      if (!isset($state->fontcolor))
-        return False;
-      elseif ($this->fontcolor != $state->fontcolor)
-        return False;
-    } elseif (isset($state->fontcolor))
-      return False;
+    // Compare colors
+    if ($this->fontcolor != $state->fontcolor) return false;
+    if ($this->background != $state->background) return false;
+    if ($this->hcolor != $state->hcolor) return false;
     
-    // Compare Background-color
-    if (isset($this->background)) {
-      if (!isset($state->background))
-        return False;
-      elseif ($this->background != $state->background)
-        return False;
-    } elseif (isset($state->background))
-      return False;
+    // Compare fonts
+    if ($this->font != $state->font) return false;
     
-    // Compare Background-color
-    if (isset($this->hcolor)) {
-      if (!isset($state->hcolor))
-        return False;
-      elseif ($this->hcolor != $state->hcolor)
-        return False;
-    } elseif (isset($state->hcolor))
-      return False;
-    
-    if (isset($this->font)) {
-      if (!isset($state->font))
-        return False;
-      elseif (  array_key_exists($this->font, self::$fonttbl) && self::$fonttbl[$this->font]->fontfamily != 
-                self::$fonttbl[$state->font]->fontfamily)
-        return False;        
-    } elseif (isset($state->font))
-      return False;
-    
-    return True;
+    return true;
   }
 }

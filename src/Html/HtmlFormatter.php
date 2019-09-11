@@ -52,75 +52,86 @@ class HtmlFormatter
       return $this->output;
     }
   }
+
+  protected function LoadFont(\RtfHtmlPhp\Group $fontGroup) {
+    $fontNumber = 0;
+    $font = new Font();
+    
+    // Loop through children of the font group. The font group
+    // contains control words with the font number and charset,
+    // and a control text with the font name.
+    foreach($fontGroup->children as $child) {
+
+      // Control word
+      if ($child instanceof \RtfHtmlPhp\ControlWord){
+        switch ($child->word) {
+          case 'f':
+            $fontNumber = $child->parameter;
+            break;
+
+          // Font family names
+          case 'froman':  $font->family = "serif";      break;
+          case 'fswiss':  $font->family = "sans-serif"; break;
+          case 'fmodern': $font->family = "monospace";  break;
+          case 'fscript': $font->family = "cursive";    break;
+          case 'fdecor':  $font->family = "fantasy";    break;
+          
+          // case 'fnil': break; // default font
+          // case 'ftech': break; // symbol
+          // case 'fbidi': break; // bidirectional font                      
+
+          case 'fcharset': // charset
+            $font->charset = $this->GetEncodingFromCharset($child->parameter);
+            break;              
+          case 'cpg': // code page
+            $font->codepage = $this->GetEncodingFromCodepage($child->parameter);
+            break;
+          case 'fprq': // Font pitch
+            $font->fprq = $child->parameter;
+            break;
+        }
+      }
+
+      // Control text contains the font name, if any:
+      if ($child instanceof \RtfHtmlPhp\Text) {
+        // Store font name (except ; delimiter at end)
+        $font->name = substr($child->text, 0, -1);
+      }       
+
+      /*
+      elseif ($child instanceof \RtfHtmlPhp\Group) {
+              // possible subgroups:
+              // '{\*' \falt #PCDATA '}' = alternate font name
+              // '{\*' \fontemb <fonttype> <fontfname>? <data>? '}'
+              // '{\*' \fontfile <codepage>? #PCDATA '}'
+              // '{\*' \panose <data> '}'
+              continue;
+            } elseif ($child instanceof \RtfHtmlPhp\ControlSymbol) {
+              // the only authorized symbol here is '*':
+              // \*\fname = non tagged file name (only WordPad uses it)
+              continue;
+            } 
+      */           
+    }
+
+    State::SetFont($fontNumber, $font);
+  }
   
   protected function ExtractFontTable($fontTblGrp)
   {
-     // {' \fonttbl (<fontinfo> | ('{' <fontinfo> '}'))+ '}'
-     // <fontnum><fontfamily><fcharset>?<fprq>?<panose>?
-     // <nontaggedname>?<fontemb>?<codepage>? <fontname><fontaltname>? ';'
+    // {' \fonttbl (<fontinfo> | ('{' <fontinfo> '}'))+ '}'
+    // <fontnum><fontfamily><fcharset>?<fprq>?<panose>?
+    // <nontaggedname>?<fontemb>?<codepage>? <fontname><fontaltname>? ';'
 
-    $fonttbl = array();
-    $c = count($fontTblGrp);
-    
-    for ($i=1;$i<$c;$i++){
-      $fname = '';
-      $fN = null;
-      foreach ($fontTblGrp[$i]->children as $child){
-        
-        if ($child instanceof \RtfHtmlPhp\ControlWord){
-          switch ($child->word) {
-            case 'f':
-              $fN = $child->parameter;
-              $fonttbl[$fN] = new Font();
-              break;
-
-            // Font family names
-            case 'froman': $fonttbl[$fN]->fontfamily = "serif"; break;
-            case 'fswiss': $fonttbl[$fN]->fontfamily = "sans-serif"; break;
-            case 'fmodern': $fonttbl[$fN]->fontfamily = "monospace"; break;
-            case 'fscript': $fonttbl[$fN]->fontfamily = "cursive"; break;
-            case 'fdecor': $fonttbl[$fN]->fontfamily = "fantasy"; break;
-            // case 'fnil': break; // default font
-            // case 'ftech': break; // symbol
-            // case 'fbidi': break; // bidirectional font                      
-            case 'fcharset': // charset
-              $fonttbl[$fN]->charset = 
-                $this->GetEncodingFromCharset($child->parameter);
-              break;              
-            case 'cpg': // code page
-              $fonttbl[$fN]->codepage = 
-                $this->GetEncodingFromCodepage($child->parameter);
-              break;
-            case 'fprq': // Font pitch
-              $fonttbl[$fN]->fprq = $child->parameter;
-              break;
-            default: break;
-          }
-        } elseif ($child instanceof \RtfHtmlPhp\Text) {
-          // Save font name
-          $fname .= $child->text;
-        } 
-  /*
-  elseif ($child instanceof \RtfHtmlPhp\Group) {
-          // possible subgroups:
-          // '{\*' \falt #PCDATA '}' = alternate font name
-          // '{\*' \fontemb <fonttype> <fontfname>? <data>? '}'
-          // '{\*' \fontfile <codepage>? #PCDATA '}'
-          // '{\*' \panose <data> '}'
-          continue;
-        } elseif ($child instanceof \RtfHtmlPhp\ControlSymbol) {
-          // the only authorized symbol here is '*':
-          // \*\fname = non tagged file name (only WordPad uses it)
-          continue;
-        } 
-  */       
-      }
-      // Remove end ; delimiter from font name
-      $fonttbl[$fN]->fontname = substr($fname,0,-1);
-      
-      // Save extracted Font
-      State::$fonttbl = $fonttbl;
-    }      
+    // The Font Table group contains the control word "fonttbl" and some
+    // subgroups. Go through the subgroups, ignoring the "fonttbl"
+    // identifier.
+    foreach($fontTblGrp->children as $child) {
+      // Ignore non-group, which should be the fonttbl identified word.
+      if(!($child instanceof \RtfHtmlPhp\Group)) continue;
+      // Load the font specification in the subgroup:
+      $this->LoadFont($child);
+    }
   }
   
   protected function ExtractColorTable($colorTblGrp) {
@@ -190,7 +201,7 @@ class HtmlFormatter
     switch ($group->GetType())
     {
       case "fonttbl": // Extract font table
-        $this->ExtractFontTable($group->children);
+        $this->ExtractFontTable($group);
         return;
       case "colortbl": // Extract color table
         $this->ExtractColorTable($group->children);
@@ -316,7 +327,7 @@ class HtmlFormatter
       case 'emdash':    $this->Write("&mdash;"); break;  // &#151; &#8212;
       case 'enspace':   $this->Write("&ensp;");  break;  // &#8194;
       case 'emspace':   $this->Write("&emsp;");  break;  // &#8195;
-      case 'tab':       $this->Write("&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;");  break;  // Character value 9
+      case 'tab':       $this->Write("&nbsp;");  break;  // Character value 9
       case 'line':      $this->output .= "<br/>"; // character value (line feed = &#10;) (carriage return = &#13;)
 
       /*
@@ -380,8 +391,8 @@ class HtmlFormatter
     // 1st case: style change occured
     // 2nd case: there is no change in style but the already created 'span'
     // element is somehow closed (ex. because of an end of paragraph)
-    if  (!$this->state->isLike($this->previousState) ||
-        ($this->state->isLike($this->previousState) && !$this->openedTags['span']))
+    if  (!$this->state->equals($this->previousState) ||
+        ($this->state->equals($this->previousState) && !$this->openedTags['span']))
     {
       // If applicable close previously opened 'span' tag
       $this->CloseTag('span');
