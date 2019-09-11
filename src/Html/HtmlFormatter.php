@@ -2,7 +2,9 @@
 
 namespace RtfHtmlPhp\Html;
 
-class Html
+use RtfHtmlPhp\Document;
+
+class HtmlFormatter
 {
   private $output = '';
   private $encoding;
@@ -25,7 +27,7 @@ class Html
     $this->encoding = $encoding;
   }
   
-  public function Format($root)
+  public function Format(Document $document)
   {
     // Keep track of style modifications
     $this->previousState = null;
@@ -39,7 +41,7 @@ class Html
     // Create the first paragraph
     $this->OpenTag('p');
     // Begin format
-    $this->ProcessGroup($root);
+    $this->ProcessGroup($document->root);
     // Remove any final unclosed 'p' tag and return result:
     if (substr($this->output, -3) == "<p>") {
       return substr($this->output, 0, -3);

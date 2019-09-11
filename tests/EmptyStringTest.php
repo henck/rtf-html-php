@@ -1,14 +1,13 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use RtfHtmlPhp\Reader;
+use RtfHtmlPhp\Document;
 
 final class EmptyStringTest extends TestCase
 {
   public function testParseEmptyString(): void
   {
-    $reader = new Reader();
-    $result = $reader->Parse("");
-    $this->assertTrue($result);
+    $document = new Document("");
+    $this->assertTrue(true);
   }
 }

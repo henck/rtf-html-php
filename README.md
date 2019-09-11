@@ -11,33 +11,32 @@ Since I couldn’t find anything ready-made, I sat down and coded one up myself.
 Install this package using composer. Then do this:
 
 ```php
-use RtfHtmlPhp\Reader;
+use RtfHtmlPhp\Document;
 
-$reader = new Reader();
-$rtf = file_get_contents("test.rtf"); // or use a string
-$result = $reader->Parse($rtf);
+$rtf = file_get_contents("test.rtf"); 
+$document = new Document($rtf); // or use a string directly
 ```
-    
-The parser will return `true` if the RTF was parsed successfully, or `false` if the RTF was malformed. Parse errors will generate PHP notices.
+
+`Document` will raise an exception if the RTF document could not be parsed. Parse errors will generate PHP notices.
 
 If you’d like to see what the parser read (for debug purposes), then call this (but only if the RTF was successfully parsed):
 
 ```php
-$reader->root->dump();
+$document->dump();
 ```
 
 To convert the parser’s parse tree to HTML, call this (but only if the RTF was successfully parsed):
 
 ```php
-use RtfHtmlPhp\Html\Html;
-$formatter = new Html();
-echo $formatter->Format($reader->root);
+use RtfHtmlPhp\Html\HtmlFormatter;
+$formatter = new HtmlFormatter();
+echo $formatter->Format($document);
 ```
 
 For enhanced compatibility the default character encoding of the converted RTF unicode characters is set to `HTML-ENTITIES`. To change the default encoding, you can initialize the `Html` object with the desired encoding supported by `mb_list_encodings()`: ex. `UTF-8`
 
 ```php
-$formatter = new Html('UTF-8');
+$formatter = new HtmlFormatter('UTF-8');
 ```
 
 ## Install via Composer

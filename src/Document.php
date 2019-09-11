@@ -4,13 +4,18 @@ declare(strict_types=1);
 
 namespace RtfHtmlPhp;
 
-class Reader
+class Document
 {
   private $rtf;        // RTF string being parsed
   private $pos;        // Current position in RTF string
   private $len;        // Length of RTF string
   public $root = null; // Root group
   private $group;      // Current RTF group
+
+  public function __construct($rtf)
+  {
+    $this->Parse($rtf);
+  }  
 
   // Get the next character from the RTF stream.
   // Parsing is aborted when reading beyond end of input string.
@@ -287,49 +292,44 @@ class Reader
   }
 
   /*
-   * Attempt to parse an RTF string. Parsing returns TRUE on success
-   * or FALSE on failure.
+   * Attempt to parse an RTF string.
    */
-  public function Parse(string $rtf): bool
+  protected function Parse(string $rtf)
   {
-    try {
-      $this->rtf = $rtf;
-      $this->pos = 0;
-      $this->len = strlen($this->rtf);
-      $this->group = null;
-      $this->root = null;
+    $this->rtf = $rtf;
+    $this->pos = 0;
+    $this->len = strlen($this->rtf);
+    $this->group = null;
+    $this->root = null;
 
-      while($this->pos < $this->len)
+    while($this->pos < $this->len)
+    {
+      // Read next character:
+      $this->GetChar();
+
+      // Ignore \r and \n
+      if($this->char == "\n" || $this->char == "\r") continue;
+
+      // What type of character is this?
+      switch($this->char)
       {
-        // Read next character:
-        $this->GetChar();
-
-        // Ignore \r and \n
-        if($this->char == "\n" || $this->char == "\r") continue;
-
-        // What type of character is this?
-        switch($this->char)
-        {
-          case '{':
-            $this->ParseStartGroup();
-            break;
-          case '}':
-            $this->ParseEndGroup();
-            break;
-          case '\\':
-            $this->ParseControl();
-            break;
-          default:
-            $this->ParseText();
-            break;
-        }
+        case '{':
+          $this->ParseStartGroup();
+          break;
+        case '}':
+          $this->ParseEndGroup();
+          break;
+        case '\\':
+          $this->ParseControl();
+          break;
+        default:
+          $this->ParseText();
+          break;
       }
-
-      return true;
-    }
-    catch(Exception $ex) {
-      return false;
     }
   }
-}
 
+  public function dump() {
+    if($this->root) $this->root->dump();
+  }
+}

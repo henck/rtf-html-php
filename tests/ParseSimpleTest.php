@@ -1,26 +1,24 @@
 <?php
 
 use PHPUnit\Framework\TestCase;
-use RtfHtmlPhp\Reader;
-use RtfHtmlPhp\Html\Html;
+use RtfHtmlPhp\Document;
+use RtfHtmlPhp\Html\HtmlFormatter;
 
 final class ParseSimpleTest extends TestCase
 {
   public function testParseSimple(): void
   {
-    $reader = new Reader();
     $rtf = file_get_contents("tests/rtf/hello-world.rtf");
-    $result = $reader->Parse($rtf);
-    $this->assertTrue($result);
+    $document = new Document($rtf);
+    $this->assertTrue(true);
   }
 
   public function testParseSimpleHtml(): void
   {
-    $reader = new Reader();
     $rtf = file_get_contents("tests/rtf/hello-world.rtf");
-    $reader->Parse($rtf);
-    $formatter = new Html();
-    $html = $formatter->Format($reader->root);    
+    $document = new Document($rtf);
+    $formatter = new HtmlFormatter();
+    $html = $formatter->Format($document);    
 
     $this->assertEquals(
       '<p><span style="font-size:15px;">Hello, world.</span></p>',
