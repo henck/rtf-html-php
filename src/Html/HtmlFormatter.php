@@ -10,7 +10,9 @@ class HtmlFormatter
   private $encoding;
   private $defaultFont;
 
-  // Initialise Encoding
+  // By default, HtmlFormatter uses HTML_ENTITIES for code conversion.
+  // You can optionally support a different endoing when creating
+  // the HtmlFormatter instance.
   public function __construct($encoding = 'HTML-ENTITIES')
   {
     if ($encoding != 'HTML-ENTITIES') {
@@ -36,6 +38,7 @@ class HtmlFormatter
     // Put an initial standard state onto the stack
     $this->state = new State();
     array_push($this->states, $this->state);
+
     // Keep track of opened html tags
     $this->openedTags = array('span' => false, 'p' => false);
     // Create the first paragraph
@@ -183,10 +186,10 @@ class HtmlFormatter
 
   protected function ProcessGroup($group)
   {
-    // Can we ignore this group?      
+    // Special group processing:
     switch ($group->GetType())
     {
-      case "fonttbl": // Extract Font table
+      case "fonttbl": // Extract font table
         $this->ExtractFontTable($group->children);
         return;
       case "colortbl": // Extract color table
@@ -204,7 +207,7 @@ class HtmlFormatter
       case "nonshppict":
         // Ignore alternative images
         return;        
-      case "*": // Process destionation
+      case "*": // Process destination
         $this->ProcessDestination($group->children);
         return;
     }     
