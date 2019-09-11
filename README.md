@@ -10,31 +10,39 @@ Since I couldn’t find anything ready-made, I sat down and coded one up myself.
 
 Install this package using composer. Then do this:
 
-    use RtfHtmlPhp\Reader;
+```php
+use RtfHtmlPhp\Reader;
 
-    $reader = new Reader();
-    $rtf = file_get_contents("test.rtf"); // or use a string
-    $result = $reader->Parse($rtf);
+$reader = new Reader();
+$rtf = file_get_contents("test.rtf"); // or use a string
+$result = $reader->Parse($rtf);
+```
     
 The parser will return `true` if the RTF was parsed successfully, or `false` if the RTF was malformed. Parse errors will generate PHP notices.
 
 If you’d like to see what the parser read (for debug purposes), then call this (but only if the RTF was successfully parsed):
 
-    $reader->root->dump();
+```php
+$reader->root->dump();
+```
 
 To convert the parser’s parse tree to HTML, call this (but only if the RTF was successfully parsed):
 
-    use RtfHtmlPhp\Html\Html;
-    $formatter = new Html();
-    echo $formatter->Format($reader->root);
+```php
+use RtfHtmlPhp\Html\Html;
+$formatter = new Html();
+echo $formatter->Format($reader->root);
+```
 
 For enhanced compatibility the default character encoding of the converted RTF unicode characters is set to `HTML-ENTITIES`. To change the default encoding, you can initialize the `Html` object with the desired encoding supported by `mb_list_encodings()`: ex. `UTF-8`
 
-    $formatter = new Html('UTF-8');
+```php
+$formatter = new Html('UTF-8');
+```
 
 ## Install via Composer
 
-```
+```shell
 composer require henck/rtf-to-html
 ```
 
