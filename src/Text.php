@@ -16,9 +16,7 @@ class Text extends Element
 
   public function dump($level)
   {
-    echo "<div style='color:red'>";
     $this->Indent($level);
-    echo "TEXT {$this->text}";
-    echo "</div>";
+    echo "TEXT {$this->text}\n";
   }    
 }

@@ -42,13 +42,12 @@ class Group extends Element
 
   public function dump($level = 0)
   {
-    echo "<div>";
     $this->Indent($level);
-    echo "{";
-    echo "</div>";
+    echo "{\n";
 
     foreach($this->children as $child)
     {
+      // Skip some group types:
       if($child instanceof Group) {
         if ($child->GetType() == "fonttbl") continue;
         if ($child->GetType() == "colortbl") continue;
@@ -61,9 +60,7 @@ class Group extends Element
       $child->dump($level + 2);
     }
 
-    echo "<div>";
     $this->Indent($level);
-    echo "}";
-    echo "</div>";
+    echo "}\n";
   }
 }

@@ -76,21 +76,22 @@ class Reader
   {
     $group = new Group();
 
-    // Is there a parent group? Then make the new group it's child:
-    if($this->group != null) $group->parent = $this->group;
-
-    // Set the new group as the current group:
-    $this->group = $group;
-
-    // Is this the first group? Then make it the root group.
-    if($this->root == null) {
+    // Is there a current group? Then make the new group its child:
+    if($this->group != null) {
+      $group->parent = $this->group;
+      array_push($this->group->children, $group);
+      array_push($this->uc, end($this->uc));
+    } 
+    // If there is no parent group, then set this group
+    // as the root group.
+    else {
       $this->root = $group;
       // Create uc stack and insert the first default value
       $this->uc = array(1);
-    } else {
-      array_push($this->uc, end($this->uc));
-      array_push($this->group->children, $group);
     }
+
+    // Set the new group as the current group:
+    $this->group = $group;
   }
 
   // Retrieve state of document from stack.

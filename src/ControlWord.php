@@ -9,9 +9,7 @@ class ControlWord extends Element
 
   public function dump($level)
   {
-    echo "<div style='color:green'>";
     $this->Indent($level);
-    echo "WORD {$this->word} ({$this->parameter})";
-    echo "</div>";
+    echo "WORD {$this->word} ({$this->parameter})\n";
   }
 }

@@ -9,9 +9,7 @@ class ControlSymbol extends Element
 
   public function dump($level)
   {
-    echo "<div style='color:blue'>";
     $this->Indent($level);
-    echo "SYMBOL {$this->symbol} ({$this->parameter})";
-    echo "</div>";
+    echo "SYMBOL {$this->symbol} ({$this->parameter})\n";
   }    
 }
