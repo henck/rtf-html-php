@@ -8,7 +8,7 @@ Since I couldn’t find anything ready-made, I sat down and coded one up myself.
 
 ## How to use it
 
-Include the file `rtf-html-php.php` somewhere in your project. Then do this:
+Install this package using composer. Then do this:
 
     use RtfHtmlPhp\Reader;
 
