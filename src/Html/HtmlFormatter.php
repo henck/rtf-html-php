@@ -46,11 +46,8 @@ class HtmlFormatter
     // Begin format
     $this->ProcessGroup($document->root);
     // Remove any final unclosed 'p' tag and return result:
-    if (substr($this->output, -3) == "<p>") {
-      return substr($this->output, 0, -3);
-    } else {
-      return $this->output;
-    }
+    return $this->openedTags['p'] ? substr($this->output, 0, -3) : $this->output;
+    
   }
 
   protected function LoadFont(\RtfHtmlPhp\Group $fontGroup) {
