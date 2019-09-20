@@ -431,8 +431,8 @@ class HtmlFormatter
         }
       } else {
         $this->output .= "</{$tag}>";
-        $this->openedTags[$tag] = false;
       }
+      $this->openedTags[$tag] = false;
     }
   }
   
