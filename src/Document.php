@@ -27,7 +27,7 @@ class Document
     } else {
       $err = "Parse error: Tried to read past end of input; RTF is probably truncated.";
       trigger_error($err);
-      throw new Exception($err);
+      throw new \Exception($err);
     }
   }
 
@@ -284,7 +284,7 @@ class Document
     if($this->group == null) {
       $err = "Parse error: RTF text outside of group.";
       trigger_error($err);
-      throw new Exception($err);
+      throw new \Exception($err);
     }
 
     // Add text as a child to the current group:
