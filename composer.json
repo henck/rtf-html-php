@@ -16,7 +16,9 @@
       "phpunit tests"
     ]
   },
-  "require": {},
+  "require": {
+    "ext-mbstring": "*"
+  },
   "autoload": {
     "psr-4": {
       "RtfHtmlPhp\\": "src/"
