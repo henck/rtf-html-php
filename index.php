@@ -6,9 +6,7 @@
     use RtfHtmlPhp\Document;
     use RtfHtmlPhp\Html\HtmlFormatter;
 
-    $original  = file_get_contents("sss.rtf");
-    // var_dump($original);exit;
-    // $final_result = str_replace(array("\r", "\f", "\v", "\t", "\""), array("\\r", "\\f", " \\v", "\\t", '\\"'), $original);
+    $original  = file_get_contents("tests/rtf/hello-world.rtf");
 
     $document = new Document($original); // or use a string directly
     $formatter = new HtmlFormatter('UTF-8');
