@@ -281,7 +281,6 @@ class Document
 
     // If there is no current group, then this is not a valid RTF file.
     // Throw an exception.
-    // var_dump($this->group);exit;
     if($this->group == null) {
       $err = "Parse error: RTF text outside of group.";
       trigger_error($err);
