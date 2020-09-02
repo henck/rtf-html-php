@@ -31,6 +31,8 @@ class HtmlFormatter
   
   public function Format(Document $document)
   {
+    // Clear current output
+    $this->output = '';
     // Keep track of style modifications
     $this->previousState = null;
     // and create a stack of states
