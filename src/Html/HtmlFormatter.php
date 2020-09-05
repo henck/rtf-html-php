@@ -325,7 +325,7 @@ class HtmlFormatter
       case 'enspace':   $this->Write("&ensp;");  break;  // &#8194;
       case 'emspace':   $this->Write("&emsp;");  break;  // &#8195;
       case 'tab':       $this->Write("&nbsp;");  break;  // Character value 9
-      case 'line':      $this->output .= "<br/>"; // character value (line feed = &#10;) (carriage return = &#13;)
+      case 'line':      $this->output .= "<br/>"; break; // character value (line feed = &#10;) (carriage return = &#13;)
 
       /*
        * Unicode characters 
