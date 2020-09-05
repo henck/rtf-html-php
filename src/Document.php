@@ -302,7 +302,7 @@ class Document
     $this->group = null;
     $this->root = null;
 
-    while($this->pos < $this->len)
+    while($this->pos < $this->len-1)
     {
       // Read next character:
       $this->GetChar();
