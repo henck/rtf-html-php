@@ -14,6 +14,6 @@ class Font
     if($this->name) array_push($list, $this->name);
     if($this->family) array_push($list, $this->family);
     if(sizeof($list) == 0) return "";
-    return "font-family:" . join($list, ',') . ";";
+    return "font-family:" . implode(',', $list) . ";";
   }
 }
