@@ -50,4 +50,4 @@
 ### Update 3 Sep ’14:
 
 - Fixed bug: underlining would start but never end. Now it does.
-- Feature request: images are now filtered out of the output.
+- Feature request: images are now filtered out of the output. 
