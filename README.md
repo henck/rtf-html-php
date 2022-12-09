@@ -6,7 +6,7 @@ Este é um projeto proveniente do renck/rtfhtml onde consegui encontrar o que eu
 
 ## Como usar
 
-Instale esse pacote usando isso:
+Para usar o código:
 
 ```php
 use RtfHtmlPhp\Document;
