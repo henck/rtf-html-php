@@ -3,7 +3,6 @@
   "description": "RTF to HTML converter in PHP",
   "keywords": ["rtf", "converter"],
   "type": "library",
-  "version": "1.3",
   "license": "GPL-2.0",
   "authors": [
     {
