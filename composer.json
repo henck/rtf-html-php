@@ -8,6 +8,20 @@
                  "email": "rafaelskillus@msn.com", 
                  "homepage": "https://twitter.com/rafaelapuka", 
                  "role": "Developer" } ], 
+  
+  "repositories": [
+{
+    "type": "package",
+    "package": {
+        "name": "example-package-name", //give package name to anything, must be unique
+        "version": "1.0",
+        "source": {
+            "url": "https://github.com/rafaelapuka/rtf-html-php.git", //git url
+            "type": "git",
+            "reference": "master" //git branch-name
+        }
+    }
+}],
   "require": { 
     "php": "^7.4", 
     "ext-json": "*" }, 
