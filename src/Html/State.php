@@ -63,10 +63,10 @@ class State
     // if($this->state->end_underline) {$span .= "text-decoration:none;";}
     if($this->strike) $style .= "text-decoration:line-through;";
     if($this->hidden) $style .= "display:none;";
-    if(isset($this->font)) {
-      $font = self::$fonttbl[$this->font];
-      $style .= $font->toStyle();
-    }
+    // if(isset($this->font)) {
+      // $font = self::$fonttbl[$this->font];
+      // $style .= $font->toStyle();
+    // }
     if($this->fontsize != 0) $style .= "font-size:{$this->fontsize}px;";
     // Font color:
     if(isset($this->fontcolor)) {
