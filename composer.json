@@ -1,30 +1,37 @@
+{ 
+  "name": "rafaelapuka/rtf-html-php", 
+  "description": "Livraria baseada em henck/rtf-html-php para transformar rtf em html", 
+  "type": "library", 
+  "keywords": [ "composer", "json", "generator" ], 
+  "license": "MIT", 
+  "authors": [ { "name": "Claudio Rafael", 
+                 "email": "rafaelskillus@msn.com", 
+                 "homepage": "https://twitter.com/rafaelapuka", 
+                 "role": "Developer" } ], 
+  
+  "repositories": [
 {
-  "name": "henck/rtf-html-php",
-  "description": "RTF to HTML converter in PHP",
-  "keywords": ["rtf", "converter"],
-  "type": "library",
-  "version": "1.2",
-  "license": "GPL-2.0",
-  "authors": [
-    {
-      "name": "Alexander van Oostenrijk",
-      "email": "alex.vanoostenrijk@gmail.com"
+    "type": "package",
+    "package": {
+        "name": "example-package-name", //give package name to anything, must be unique
+        "version": "1.0",
+        "source": {
+            "url": "https://github.com/rafaelapuka/rtf-html-php.git", //git url
+            "type": "git",
+            "reference": "master" //git branch-name
+        }
     }
-  ],
-  "scripts": {
-    "test": [
-      "phpunit tests"
-    ]
-  },
-  "require": {
-    "ext-mbstring": "*"
-  },
-  "autoload": {
-    "psr-4": {
-      "RtfHtmlPhp\\": "src/"
-    }
-  },
-  "require-dev": {
-    "phpunit/phpunit": "7"
-  }
+}],
+  "require": { 
+    "php": "^7.4", 
+    "ext-json": "*" }, 
+  "require-dev": { 
+    "phpunit/phpunit": "^8.0" }, 
+  "autoload": { 
+    "psr-4": { "ComposerJson\\": "./src/" } }, 
+  "autoload-dev": { 
+    "psr-4": { 
+      "ComposerJson\\Tests\\": "./tests/" 
+    } 
+  } 
 }
