@@ -2,11 +2,13 @@
 
 _An RTF to HTML converter in PHP_
 
-Este é um projeto proveniente do renck/rtfhtml onde consegui encontrar o que eu tanto precisava par aum projeto
+In a recent project, I desperately needed an RTF to HTML converter written in PHP. Googling around turned up some matches, but I could not get them to work properly. Also, one of them called `passthru()` to use a RTF2HTML executable, which is something I didn’t want. I was looking for an RTF to HTML converter written purely in PHP.
 
-## Como usar
+Since I couldn’t find anything ready-made, I sat down and coded one up myself. It’s short, and it works, implementing the subset of RTF tags that you’ll need in HTML and ignoring the rest. As it turns out, the RTF format isn’t that complicated when you really look at it, but it isn’t something you code a parser for in 15 minutes either.
 
-Para usar o código:
+## How to use it
+
+Install this package using composer. Then do this:
 
 ```php
 use RtfHtmlPhp\Document;
@@ -40,10 +42,9 @@ $formatter = new HtmlFormatter('UTF-8');
 ## Install via Composer
 
 ```shell
-composer require rafaelapuka/rtf-to-html
+composer require henck/rtf-to-html
 ```
 
 ## Caveats
 
 * Please note that rtf-html-php requires your PHP installation to support the `mb_convert_encoding` function. Therefore you must have the `php-mbstring` module installed. For fresh PHP installations, it will usually be there.
-
