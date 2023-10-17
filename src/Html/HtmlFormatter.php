@@ -174,6 +174,7 @@ class HtmlFormatter
           case "jpegblip": $Image->format = 'jpeg'; break;
           case "macpict": $Image->format = 'pict'; break;
           // case "wmetafile": $Image->format = 'bmp'; break;
+          case "dibitmap": $Image->format = 'dibitmap'; break;
 
           // Picture size and scaling
           case "picw": $Image->width = $child->parameter; break;
@@ -189,7 +190,27 @@ class HtmlFormatter
         }
 
       } elseif ($child instanceof \RtfHtmlPhp\Text) { // store Data
-        $Image->ImageData = $child->text;
+        if ($Image->format == 'dibitmap') { // convert DIB to bitmap
+            // Header field, 2 bytes
+            $fileHeader = "424D"; // 'BM'
+            // File size, 4 bytes
+            $fileSize = strlen($child->text)/2 + 14;
+            $fileHeader .= sprintf("%02X", $fileSize & 0xFF);
+            $fileHeader .= sprintf("%02X", ($fileSize & 0xFF00) >> 8);
+            $fileHeader .= sprintf("%02X", ($fileSize & 0xFF0000) >> 16);
+            $fileHeader .= sprintf("%02X", ($fileSize & 0xFF000000) >> 24);
+            // Reserved 4 bytes
+            $fileHeader .= "00000000";
+            // Offset, 4 bytes, but only one byte is used (max=124+14)
+            $dibHeaderSize = ord(hex2bin(substr($child->text, 0, 2)));
+            $fileHeader .= sprintf("%02X", $dibHeaderSize + 14) . "000000";
+            // Create bitmap file and set correct format
+            $Image->ImageData = $fileHeader . $child->text;
+            $Image->format = 'bmp';
+        }
+        else {
+            $Image->ImageData = $child->text;
+        }
       }
     }
     // output Image
