@@ -4,6 +4,7 @@ namespace RtfHtmlPhp\Html;
 
 use RtfHtmlPhp\Document;
 
+#[\AllowDynamicProperties]
 class HtmlFormatter
 {
   private $output = '';

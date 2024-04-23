@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 namespace RtfHtmlPhp;
-
+#[\AllowDynamicProperties]
 class Document
 {
   private $rtf;        // RTF string being parsed

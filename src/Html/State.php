@@ -1,7 +1,7 @@
 <?php 
 
 namespace RtfHtmlPhp\Html;
-
+#[\AllowDynamicProperties]
 class State
 {
   public static $fonttbl = array();
