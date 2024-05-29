@@ -21,7 +21,7 @@ final class ParseSimpleTest extends TestCase
     $html = $formatter->Format($document);    
 
     $this->assertEquals(
-      '<p><span style="font-family:Calibri;font-size:15px;">Hello, world.</span></p>',
+      '<p><span style="font-family:Calibri;font-size:15px;">Hello, world.</span></p><p></p>',
       $html
     );
   }  

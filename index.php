@@ -7,10 +7,10 @@
     use RtfHtmlPhp\Html\HtmlFormatter;
 
     $original  = file_get_contents("tests/rtf/hello-world.rtf");
+    $original  = file_get_contents("tests/rtf/fonts.rtf");
 
     $document = new Document($original); // or use a string directly
     $formatter = new HtmlFormatter('UTF-8');
     $r = $formatter->Format($document);
     file_put_contents('rtf.html', $r);
     echo $r;
-?>

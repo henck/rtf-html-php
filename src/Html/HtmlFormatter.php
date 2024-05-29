@@ -4,12 +4,23 @@ namespace RtfHtmlPhp\Html;
 
 use RtfHtmlPhp\Document;
 
-#[\AllowDynamicProperties]
 class HtmlFormatter
 {
   private $output = '';
   private $encoding;
   private $defaultFont;
+
+  // dinamic declarations fixed
+  
+  private $previousState;
+  private $states;
+  /**
+   * State
+   */
+  private $state;
+  private $openedTags;
+  private $RTFencoding;
+
 
   // By default, HtmlFormatter uses HTML_ENTITIES for code conversion.
   // You can optionally support a different endoing when creating
@@ -117,7 +128,7 @@ class HtmlFormatter
       */
     }
 
-    State::SetFont($fontNumber, $font);
+    State::setFontInFontTable($fontNumber, $font);
   }
 
   protected function ExtractFontTable($fontTblGrp)
@@ -274,28 +285,28 @@ class HtmlFormatter
        */
 
       case 'b': // bold
-        $this->state->bold = $word->parameter;
+        $this->state->setBold($word->parameter);
         break;
       case 'i': // italic
-        $this->state->italic = $word->parameter;
+        $this->state->setItalic($word->parameter);
         break;
       case 'ul': // underline
-        $this->state->underline = $word->parameter;
+        $this->state->setUnderline($word->parameter);
         break;
       case 'ulnone': // no underline
-        $this->state->underline = false;
+        $this->state->setUnderline(false);
         break;
       case 'strike': // strike-through
-        $this->state->strike = $word->parameter;
+        $this->state->setStrike($word->parameter);
         break;
       case 'v': // hidden
-        $this->state->hidden = $word->parameter;
+        $this->state->setHidden($word->parameter);
         break;
       case 'fs': // Font size
-        $this->state->fontsize = ceil(($word->parameter / 24) * 16);
+        $this->state->setFontsize(ceil(($word->parameter / 24) * 16));
         break;
       case 'f': // Font
-        $this->state->font = $word->parameter;
+        $this->state->setFont($word->parameter);
         break;
       case 'deff': // Store default font
         $this->defaultFont = $word->parameter;
@@ -307,14 +318,14 @@ class HtmlFormatter
 
       case 'cf':
       case 'chcfpat':
-        $this->state->fontcolor = $word->parameter;
+        $this->state->setFontcolor($word->parameter);
         break;
       case 'cb':
       case 'chcbpat':
-        $this->state->background = $word->parameter;
+        $this->state->setBackground($word->parameter);
         break;
       case 'highlight':
-        $this->state->hcolor = $word->parameter;
+        $this->state->setHcolor($word->parameter);
         break;
 
       /*
@@ -594,6 +605,150 @@ class HtmlFormatter
       return ($ord0 - 252) * 1073741824 + ($ord1 - 128) * 16777216 + ($ord2 - 128) * 262144 + ($ord3 - 128) * 4096 + ($ord4 - 128) * 64 + (ord($chr[5]) - 128);
 
     trigger_error("Invalid Unicode character: {$chr}");
+  }
+
+  /**
+   * Get the value of output
+   */
+  public function getOutput()
+  {
+    return $this->output;
+  }
+
+  /**
+   * Set the value of output
+   */
+  public function setOutput($output): self
+  {
+    $this->output = $output;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of encoding
+   */
+  public function getEncoding()
+  {
+    return $this->encoding;
+  }
+
+  /**
+   * Set the value of encoding
+   */
+  public function setEncoding($encoding): self
+  {
+    $this->encoding = $encoding;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of defaultFont
+   */
+  public function getDefaultFont()
+  {
+    return $this->defaultFont;
+  }
+
+  /**
+   * Set the value of defaultFont
+   */
+  public function setDefaultFont($defaultFont): self
+  {
+    $this->defaultFont = $defaultFont;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of previousState
+   */
+  public function getPreviousState()
+  {
+    return $this->previousState;
+  }
+
+  /**
+   * Set the value of previousState
+   */
+  public function setPreviousState($previousState): self
+  {
+    $this->previousState = $previousState;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of states
+   */
+  public function getStates()
+  {
+    return $this->states;
+  }
+
+  /**
+   * Set the value of states
+   */
+  public function setStates($states): self
+  {
+    $this->states = $states;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of state
+   */
+  public function getState()
+  {
+    return $this->state;
+  }
+
+  /**
+   * Set the value of state
+   */
+  public function setState($state): self
+  {
+    $this->state = $state;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of openedTags
+   */
+  public function getOpenedTags()
+  {
+    return $this->openedTags;
+  }
+
+  /**
+   * Set the value of openedTags
+   */
+  public function setOpenedTags($openedTags): self
+  {
+    $this->openedTags = $openedTags;
+
+    return $this;
+  }
+
+  /**
+   * Get the value of RTFencoding
+   */
+  public function getRTFencoding()
+  {
+    return $this->RTFencoding;
+  }
+
+  /**
+   * Set the value of RTFencoding
+   */
+  public function setRTFencoding($RTFencoding): self
+  {
+    $this->RTFencoding = $RTFencoding;
+
+    return $this;
   }
 }
 

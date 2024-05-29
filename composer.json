@@ -1,5 +1,5 @@
 {
-  "name": "henck/rtf-html-php",
+  "name": "barbosaadriano/rtf-html-php",
   "description": "RTF to HTML converter in PHP",
   "keywords": ["rtf", "converter"],
   "type": "library",
@@ -9,6 +9,9 @@
     {
       "name": "Alexander van Oostenrijk",
       "email": "alex.vanoostenrijk@gmail.com"
+    },{
+      "name": "Adriano Barbosa",
+      "email": "b.adrianobarbosa@gmail.com"
     }
   ],
   "scripts": {
@@ -16,7 +19,9 @@
       "phpunit tests"
     ]
   },
-  "require": {},
+  "require": {
+    "php": "^8.0"
+  },
   "autoload": {
     "psr-4": {
       "RtfHtmlPhp\\": "src/"

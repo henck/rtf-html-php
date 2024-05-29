@@ -51,3 +51,9 @@
 
 - Fixed bug: underlining would start but never end. Now it does.
 - Feature request: images are now filtered out of the output. 
+
+
+### Update 5 Mai 28:
+
+- fix declarations of dinamic properties to run in php8 environment
+- created some getters and setters and fix all the broken tests only
