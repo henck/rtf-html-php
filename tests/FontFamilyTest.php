@@ -8,7 +8,8 @@ final class FontFamilyTestTest extends TestCase
 {
   public function testParseFontFamilyHtml(): void
   {
-    $rtf = file_get_contents("tests/rtf/fonts.rtf");
+    $rtf = file_get_contents(__DIR__ ."/rtf/fonts.rtf");
+
     $document = new Document($rtf);
     $formatter = new HtmlFormatter();
     $html = $formatter->Format($document);    
