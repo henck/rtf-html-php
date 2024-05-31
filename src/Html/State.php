@@ -63,7 +63,7 @@ class State
     // if($this->state->end_underline) {$span .= "text-decoration:none;";}
     if($this->strike) $style .= "text-decoration:line-through;";
     if($this->hidden) $style .= "display:none;";
-    if(isset($this->font)) {
+    if(isset($this->font) && array_key_exists($this->font, self::$fonttbl)) {
       $font = self::$fonttbl[$this->font];
       $style .= $font->toStyle();
     }
@@ -75,7 +75,7 @@ class State
         $style .= "color:" . self::$colortbl[$this->fontcolor] . ";";
     }
     // Background color:
-    if (isset($this->background)) {
+    if (isset($this->background) && array_key_exists($this->background, self::$colortbl)) {
       // Check if color is set. in particular when it's the 'auto' color
       if (self::$colortbl[$this->background])
         $style .= "background-color:" . self::$colortbl[$this->background] . ";";
