@@ -4,6 +4,17 @@ namespace RtfHtmlPhp\Html;
 
 class State
 {
+  public $bold;
+  public $italic;
+  public $underline;
+  public $strike;
+  public $hidden;
+  public $fontsize;
+  public $fontcolor;
+  public $background;
+  public $hcolor;
+  public $font;
+
   public static $fonttbl = array();
   public static $colortbl = array();
   private static $highlight = array(
@@ -63,25 +74,25 @@ class State
     // if($this->state->end_underline) {$span .= "text-decoration:none;";}
     if($this->strike) $style .= "text-decoration:line-through;";
     if($this->hidden) $style .= "display:none;";
-    if(isset($this->font) && array_key_exists($this->font, self::$fonttbl)) {
+    if(!is_null($this->font) && array_key_exists($this->font, self::$fonttbl)) {
       $font = self::$fonttbl[$this->font];
       $style .= $font->toStyle();
     }
     if($this->fontsize != 0) $style .= "font-size:{$this->fontsize}px;";
     // Font color:
-    if(isset($this->fontcolor)) {
+    if(!is_null($this->fontcolor)) {
       // Check if color is set. in particular when it's the 'auto' color
       if (array_key_exists($this->fontcolor, self::$colortbl) && self::$colortbl[$this->fontcolor])
         $style .= "color:" . self::$colortbl[$this->fontcolor] . ";";
     }
     // Background color:
-    if (isset($this->background) && array_key_exists($this->background, self::$colortbl)) {
+    if (!is_null($this->background) && array_key_exists($this->background, self::$colortbl)) {
       // Check if color is set. in particular when it's the 'auto' color
       if (self::$colortbl[$this->background])
         $style .= "background-color:" . self::$colortbl[$this->background] . ";";
     
     // Highlight color:
-    } elseif (isset($this->hcolor)) {       
+    } elseif (!is_null($this->hcolor)) {       
       if (isset(self::$highlight[$this->hcolor]))
         $style .= "background-color:" . self::$highlight[$this->hcolor] . ";";
     }

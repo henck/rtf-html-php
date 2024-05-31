@@ -6,9 +6,14 @@ use RtfHtmlPhp\Document;
 
 class HtmlFormatter
 {
-  private $output = '';
-  private $encoding;
   private $defaultFont;
+  private $encoding;
+  private $openedTags;
+  private $output = '';
+  private $previousState;
+  private $RTFencoding;
+  private $state;
+  private $states;
 
   // By default, HtmlFormatter uses HTML_ENTITIES for code conversion.
   // You can optionally support a different endoing when creating
@@ -115,6 +120,8 @@ class HtmlFormatter
             }
       */
     }
+
+    //dump('sf', $fontNumber);
 
     State::SetFont($fontNumber, $font);
   }
@@ -472,7 +479,7 @@ class HtmlFormatter
 
   protected function GetSourceEncoding()
   {
-    if (isset($this->state->font)) {
+    if (!is_null($this->state->font)) {
       if (isset(State::$fonttbl[$this->state->font]->codepage)) {
         return State::$fonttbl[$this->state->font]->codepage;
 

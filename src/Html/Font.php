@@ -8,6 +8,7 @@ class Font
   public $name;
   public $charset;
   public $codepage;
+  public $fprq;
   
   public function toStyle(): string {
     $list = array();

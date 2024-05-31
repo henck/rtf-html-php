@@ -11,6 +11,8 @@ class Document
   private $len;        // Length of RTF string
   public $root = null; // Root group
   private $group;      // Current RTF group
+  private $char;
+  private $uc;
 
   public function __construct($rtf)
   {
