@@ -121,8 +121,6 @@ class HtmlFormatter
       */
     }
 
-    //dump('sf', $fontNumber);
-
     State::SetFont($fontNumber, $font);
   }
 

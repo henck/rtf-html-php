@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2
+
+### Update 05 June '24:
+- Declared properties in classes to prevent dynamic property warnings.
+- Allowed default formatting to be applied even when a font is set without valid table definitions.
+- Updated tests to fix previously failing tests .
+- Set version to 1.2
+
 ## 1.1
 
 ### Update 11 Sep '19:
