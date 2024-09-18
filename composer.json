@@ -3,8 +3,7 @@
   "description": "RTF to HTML converter in PHP",
   "keywords": ["rtf", "converter"],
   "type": "library",
-  "version": "1.1",
-  "license": "GPL-2.0",
+  "license": "GPL-2.0-only",
   "authors": [
     {
       "name": "Alexander van Oostenrijk",
@@ -16,13 +15,15 @@
       "phpunit tests"
     ]
   },
-  "require": {},
+  "require": {
+    "php": "^8.0"
+  },
   "autoload": {
     "psr-4": {
       "RtfHtmlPhp\\": "src/"
     }
   },
   "require-dev": {
-    "phpunit/phpunit": "7"
+    "phpunit/phpunit": "^8"
   }
 }
