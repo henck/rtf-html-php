@@ -1,5 +1,5 @@
 {
-  "name": "barbosaadriano/rtf-html-php",
+  "name": "henck/rtf-html-php",
   "description": "RTF to HTML converter in PHP",
   "keywords": ["rtf", "converter"],
   "type": "library",
@@ -8,9 +8,6 @@
     {
       "name": "Alexander van Oostenrijk",
       "email": "alex.vanoostenrijk@gmail.com"
-    },{
-      "name": "Adriano Barbosa",
-      "email": "b.adrianobarbosa@gmail.com"
     }
   ],
   "scripts": {
