@@ -53,7 +53,7 @@
 - Feature request: images are now filtered out of the output. 
 
 
-### Update 5 Mai 28:
+### Update 5 May '24:
 
-- fix declarations of dinamic properties to run in php8 environment
-- created some getters and setters and fix all the broken tests only
+- Fix declarations of dynamic properties to run in PHP 8 environment
+- Created some getters and setters and fix broken tests
