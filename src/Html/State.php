@@ -60,6 +60,7 @@ class State
     $this->background = null;
     $this->hcolor = null;
     $this->font = isset($defaultFont) ? $defaultFont : null;
+    $this->href = null;
   }
   
   public function PrintStyle()
@@ -121,6 +122,9 @@ class State
     
     // Compare fonts
     if ($this->font != $state->font) return false;
+    
+    // Compare urls
+    if ($this->href != $state->href) return false;
     
     return true;
   }
