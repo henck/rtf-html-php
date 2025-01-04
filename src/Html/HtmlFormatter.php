@@ -54,13 +54,14 @@ class HtmlFormatter
     array_push($this->states, $this->state);
 
     // Keep track of opened html tags
-    $this->openedTags = array('span' => false, 'p' => false);
+    $this->openedTags = array('span' => false, 'p' => false, 'a' => false);
     // Create the first paragraph
     $this->OpenTag('p');
     // Begin format
     $this->ProcessGroup($document->root);
     // Instead of removing opened tags, we close them
       $append = $this->openedTags['span'] ? '</span>' : '';
+      $append .= $this->openedTags['a'] ? '</a>' : '';
       $append .= $this->openedTags['p'] ? '</p>' : '';
 
       return $this->output . $append;
@@ -240,6 +241,11 @@ class HtmlFormatter
     // Pictures extraction not yet supported
     //if(substr($group->GetType(), 0, 4) == "pict") return;
 
+    // If a destination was a HYPERLINK
+    if ($this->state->href) {
+        $this->OpenTag('a','target="_blank" href='.$this->state->href);
+    }
+
     // Push a new state onto the stack:
     $this->state = clone $this->state;
     array_push($this->states, $this->state);
@@ -262,6 +268,10 @@ class HtmlFormatter
       for ($i=2;$i<$c;$i++)
         $this->FormatEntry($dest[$i]);
       }
+    if ($dest[1]->word == "fldinst" && count($dest)>=2 && substr($dest[2]->text,0,10)=="HYPERLINK " ) {
+      $url=substr($dest[2]->text,10);
+      $this->state->href=$url;
+    }
   }
 
   protected function FormatEntry($entry)
@@ -452,9 +462,11 @@ class HtmlFormatter
 
   protected function CloseTags()
   {
-    // Close all opened tags
+    // Close all opened tags but p
     foreach ($this->openedTags as $tag => $b)
-      $this->CloseTag($tag);
+      if ($tag!='p') $this->CloseTag($tag);
+    // And than close p as a last one
+    if ($this->openedTags['p']) $this->CloseTag('p');
   }
 
   protected function FormatControlSymbol($symbol)
