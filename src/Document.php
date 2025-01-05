@@ -241,41 +241,55 @@ class Document
     // unless escaped.
     $text = "";
     $terminate = false;
-    do
-    {
-      // Ignore EOL characters
-      if($this->char == "\r" || $this->char == "\n") {
-        $this->GetChar();
-        continue;
-      }
-      // Is this an escape?
-      if($this->char == '\\') {
-        // Perform lookahead to see if this
-        // is really an escape sequence.
-        $this->GetChar();
-        switch($this->char)
-        {
-          case '\\': break;
-          case '{': break;
-          case '}': break;
-          default:
-            // Not an escape. Roll back.
-            $this->pos = $this->pos - 2;
-            $terminate = true;
-            break;
-        }
-      } elseif ($this->char == '{' || $this->char == '}') {
-        $this->pos--;
-        $terminate = true;
-      }
 
-      if(!$terminate) {
-        // Save plain text
-        $text .= $this->char;
-        $this->GetChar();
-      } 
-    } 
-    while(!$terminate && $this->pos < $this->len);
+    // First, we take a currently parsed part of text without it's beginning
+    $sub=substr($this->rtf,$this->pos-1);
+    do {
+        $len=strlen($sub);
+
+        // Searching for any "special symbols"
+        $posOpen=strpos($sub,'{');
+        $posClose=strpos($sub,'}');
+        $posSlash=strpos($sub,'\\');
+
+        // It's a cheat to choose a closest found and not confuse with "false", we replace false with out-of-bounds value
+        if ($posOpen===false) $posOpen=$len+1;
+        if ($posClose===false) $posClose=$len+1;
+        if ($posSlash===false) $posSlash=$len+1;
+
+        // So, this is a position of closest found "special symbol"
+        $pos=min($posOpen, $posClose, $posSlash);
+
+        // If it was not found, we are in trouble, RTF cannot end with TEXT, at least a root group must be closed after it
+        if ($pos==$len+1) {
+            $err = "Parse error: input cannot end with text; RTF is probably truncated.";
+            trigger_error($err);
+            throw new \Exception($err);
+        } else {
+
+            if ($sub[$pos]=="\\" && $pos+1<$len && ($sub[$pos+1]=="\\" || $sub[$pos+1]=="{" || $sub[$pos+1]=="}")) {
+
+                // If we have found \, it's not last symbol, and next is escaped "special" - add everything with
+                // (INCLUDING) search result and the next symbol to the resulting text and continue searching
+                $text.=substr($sub,0,$pos+2);
+                $sub=substr($sub,$pos+2);
+                $this->pos += $pos+2;
+                $this->char = strlen($sub)>0?$sub[0]:'';
+            } else {
+
+                // If \ not found or found and it doesn't escape anything - add all everything up to
+                // (EXCLUDING) search result and return
+                $terminate=true;
+                $text.=substr($sub,0,$pos);
+                $this->pos += $pos-1;
+                $this->char = $sub[$pos];
+            }
+        }
+    }
+    while (!$terminate && $pos<$len);
+
+    // Remove \n and \r
+    $text = str_replace("\r",'',str_replace("\n",'',$text));
 
     // Create new Text element:
     $text = new Text($text);
