@@ -48,3 +48,7 @@ composer require henck/rtf-to-html
 ## Caveats
 
 * Please note that rtf-html-php requires your PHP installation to support the `mb_convert_encoding` function. Therefore you must have the `php-mbstring` module installed. For fresh PHP installations, it will usually be there.
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
