@@ -3,7 +3,7 @@
   "description": "RTF to HTML converter in PHP",
   "keywords": ["rtf", "converter"],
   "type": "library",
-  "license": "GPL-2.0-only",
+  "license": "MIT",
   "authors": [
     {
       "name": "Alexander van Oostenrijk",
