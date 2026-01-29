@@ -10,6 +10,8 @@ class HtmlFormatter
   private $encoding;
   private $defaultFont;
 
+  private $multibyteBuffer = array(); 
+  
   // dinamic declarations fixed
   
   private $previousState;
@@ -59,6 +61,16 @@ class HtmlFormatter
     $this->OpenTag('p');
     // Begin format
     $this->ProcessGroup($document->root);
+    
+    // Flush any remaining bytes in multibyte buffer
+    if (!empty($this->multibyteBuffer)) {
+      // If there's an incomplete multibyte sequence, output as HTML entities
+      foreach ($this->multibyteBuffer as $byte) {
+        $this->Write("&#{$byte};");
+      }
+      $this->multibyteBuffer = array();
+    }
+    
     // Instead of removing opened tags, we close them
       $append = $this->openedTags['span'] ? '</span>' : '';
       $append .= $this->openedTags['a'] ? '</a>' : '';
@@ -271,7 +283,7 @@ class HtmlFormatter
     if ($dest[1]->word == "fldinst" && count($dest)>=2 && substr($dest[2]->text,0,10)=="HYPERLINK " ) {
       $url=substr($dest[2]->text,10);
       $this->state->href=$url;
-    }
+      }
   }
 
   protected function FormatEntry($entry)
@@ -409,6 +421,45 @@ class HtmlFormatter
     }
   }
 
+  protected function DecodeMultibyte($byte1, $byte2, $srcEnc)
+  {
+    $utf8 = '';
+
+    if ($srcEnc != 'UTF-8') {
+      // Combine two bytes into a single character
+      $char = chr($byte1) . chr($byte2);
+      $result = @iconv($srcEnc, 'UTF-8', $char);
+      if ($result !== false) {
+        $utf8 = $result;
+      }
+    }
+
+    if ($this->encoding == 'HTML-ENTITIES') {
+      return $utf8 ? "&#{$this->ord_utf8($utf8)};" : "&#" . (($byte1 << 8) | $byte2) . ";";
+
+    } elseif ($this->encoding == 'UTF-8') {
+      return $utf8 ? $utf8 : mb_convert_encoding("&#" . (($byte1 << 8) | $byte2) . ";", $this->encoding, 'HTML-ENTITIES');
+
+    } else {
+      return $utf8 ? mb_convert_encoding($utf8, $this->encoding, 'UTF-8') :
+        mb_convert_encoding("&#" . (($byte1 << 8) | $byte2) . ";", $this->encoding, 'HTML-ENTITIES');
+    }
+  }
+
+  protected function IsMultibyteEncoding($enc)
+  {
+    // Common multibyte encodings that require 2 bytes per character
+    $multibyteEncodings = array(
+      'CP936',  // Simplified Chinese (GB2312)
+      'CP949',  // Korean (Hangul)
+      'CP950',  // Traditional Chinese (Big5)
+      'CP932',  // Japanese (Shift_JIS)
+      'CP1361', // Korean (Johab)
+    );
+    
+    return in_array($enc, $multibyteEncodings);
+  }
+
   protected function Write($txt)
   {
     // Create a new 'span' element only when a style change occurs.
@@ -473,8 +524,20 @@ class HtmlFormatter
   {
     if($symbol->symbol == '\'') {
       $enc = $this->GetSourceEncoding();
-      $uchar = $this->DecodeUnicode($symbol->parameter, $enc);
-      $this->Write($uchar);
+      
+      if ($this->IsMultibyteEncoding($enc)) {
+        $this->multibyteBuffer[] = $symbol->parameter;
+        
+        if (count($this->multibyteBuffer) >= 2) {
+          $byte1 = array_shift($this->multibyteBuffer);
+          $byte2 = array_shift($this->multibyteBuffer);
+          $uchar = $this->DecodeMultibyte($byte1, $byte2, $enc);
+          $this->Write($uchar);
+        }
+      } else {
+        $uchar = $this->DecodeUnicode($symbol->parameter, $enc);
+        $this->Write($uchar);
+      }
     }elseif ($symbol->symbol == '~') {
       $this->Write("&nbsp;"); // Non breaking space
     }elseif ($symbol->symbol == '-') {
