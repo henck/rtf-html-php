@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 namespace RtfHtmlPhp;
+
 class Document
 {
   private $rtf;        // RTF string being parsed
@@ -10,8 +11,8 @@ class Document
   private $len;        // Length of RTF string
   public $root = null; // Root group
   private $group;      // Current RTF group
-  private $char; //fixed dinamic declarations
-  private $uc; //fixed dinamic declarations
+  private $char = null; // Current character (PHP 8.2+ compatibility)
+  private $uc = [];     // Unicode skip count stack (PHP 8.2+ compatibility)
 
   public function __construct($rtf)
   {

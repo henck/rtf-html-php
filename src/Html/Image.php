@@ -4,17 +4,6 @@ namespace RtfHtmlPhp\Html;
 
 class Image
 {
-
-  public $format;
-  public $width;
-  public $height;
-  public $goalWidth;
-  public $goalHeight;
-  public $pcScaleX;
-  public $pcScaleY;
-  public $binarySize;
-  public $ImageData;
-
   public function __construct()
   {
     $this->Reset();
