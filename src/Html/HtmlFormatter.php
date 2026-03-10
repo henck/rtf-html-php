@@ -9,18 +9,10 @@ class HtmlFormatter
   private $output = '';
   private $encoding;
   private $defaultFont;
-
-  // dinamic declarations fixed
-  
-  private $previousState;
-  private $states;
-  /**
-   * State
-   */
-  private $state;
-  private $openedTags;
-  private $RTFencoding;
-
+  private $previousState = null; // PHP 8.2+ compatibility
+  private $states = [];          // PHP 8.2+ compatibility
+  private $state = null;         // PHP 8.2+ compatibility
+  private $openedTags = [];      // PHP 8.2+ compatibility
 
   // By default, HtmlFormatter uses HTML_ENTITIES for code conversion.
   // You can optionally support a different endoing when creating
@@ -54,14 +46,13 @@ class HtmlFormatter
     array_push($this->states, $this->state);
 
     // Keep track of opened html tags
-    $this->openedTags = array('span' => false, 'p' => false, 'a' => false);
+    $this->openedTags = array('span' => false, 'p' => false);
     // Create the first paragraph
     $this->OpenTag('p');
     // Begin format
     $this->ProcessGroup($document->root);
     // Instead of removing opened tags, we close them
       $append = $this->openedTags['span'] ? '</span>' : '';
-      $append .= $this->openedTags['a'] ? '</a>' : '';
       $append .= $this->openedTags['p'] ? '</p>' : '';
 
       return $this->output . $append;
@@ -129,7 +120,7 @@ class HtmlFormatter
       */
     }
 
-    State::setFontInFontTable($fontNumber, $font);
+    State::SetFont($fontNumber, $font);
   }
 
   protected function ExtractFontTable($fontTblGrp)
@@ -241,11 +232,6 @@ class HtmlFormatter
     // Pictures extraction not yet supported
     //if(substr($group->GetType(), 0, 4) == "pict") return;
 
-    // If a destination was a HYPERLINK
-    if ($this->state->href) {
-        $this->OpenTag('a','target="_blank" href='.$this->state->href);
-    }
-
     // Push a new state onto the stack:
     $this->state = clone $this->state;
     array_push($this->states, $this->state);
@@ -268,10 +254,6 @@ class HtmlFormatter
       for ($i=2;$i<$c;$i++)
         $this->FormatEntry($dest[$i]);
       }
-    if ($dest[1]->word == "fldinst" && count($dest)>=2 && substr($dest[2]->text,0,10)=="HYPERLINK " ) {
-      $url=substr($dest[2]->text,10);
-      $this->state->href=$url;
-    }
   }
 
   protected function FormatEntry($entry)
@@ -295,28 +277,28 @@ class HtmlFormatter
        */
 
       case 'b': // bold
-        $this->state->setBold($word->parameter);
+        $this->state->bold = $word->parameter;
         break;
       case 'i': // italic
-        $this->state->setItalic($word->parameter);
+        $this->state->italic = $word->parameter;
         break;
       case 'ul': // underline
-        $this->state->setUnderline($word->parameter);
+        $this->state->underline = $word->parameter;
         break;
       case 'ulnone': // no underline
-        $this->state->setUnderline(false);
+        $this->state->underline = false;
         break;
       case 'strike': // strike-through
-        $this->state->setStrike($word->parameter);
+        $this->state->strike = $word->parameter;
         break;
       case 'v': // hidden
-        $this->state->setHidden($word->parameter);
+        $this->state->hidden = $word->parameter;
         break;
       case 'fs': // Font size
-        $this->state->setFontsize(ceil(($word->parameter / 24) * 16));
+        $this->state->fontsize = ceil(($word->parameter / 24) * 16);
         break;
       case 'f': // Font
-        $this->state->setFont($word->parameter);
+        $this->state->font = $word->parameter;
         break;
       case 'deff': // Store default font
         $this->defaultFont = $word->parameter;
@@ -328,14 +310,14 @@ class HtmlFormatter
 
       case 'cf':
       case 'chcfpat':
-        $this->state->setFontcolor($word->parameter);
+        $this->state->fontcolor = $word->parameter;
         break;
       case 'cb':
       case 'chcbpat':
-        $this->state->setBackground($word->parameter);
+        $this->state->background = $word->parameter;
         break;
       case 'highlight':
-        $this->state->setHcolor($word->parameter);
+        $this->state->hcolor = $word->parameter;
         break;
 
       /*
@@ -462,11 +444,9 @@ class HtmlFormatter
 
   protected function CloseTags()
   {
-    // Close all opened tags but p
+    // Close all opened tags
     foreach ($this->openedTags as $tag => $b)
-      if ($tag!='p') $this->CloseTag($tag);
-    // And than close p as a last one
-    if ($this->openedTags['p']) $this->CloseTag('p');
+      $this->CloseTag($tag);
   }
 
   protected function FormatControlSymbol($symbol)
@@ -617,150 +597,6 @@ class HtmlFormatter
       return ($ord0 - 252) * 1073741824 + ($ord1 - 128) * 16777216 + ($ord2 - 128) * 262144 + ($ord3 - 128) * 4096 + ($ord4 - 128) * 64 + (ord($chr[5]) - 128);
 
     trigger_error("Invalid Unicode character: {$chr}");
-  }
-
-  /**
-   * Get the value of output
-   */
-  public function getOutput()
-  {
-    return $this->output;
-  }
-
-  /**
-   * Set the value of output
-   */
-  public function setOutput($output): self
-  {
-    $this->output = $output;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of encoding
-   */
-  public function getEncoding()
-  {
-    return $this->encoding;
-  }
-
-  /**
-   * Set the value of encoding
-   */
-  public function setEncoding($encoding): self
-  {
-    $this->encoding = $encoding;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of defaultFont
-   */
-  public function getDefaultFont()
-  {
-    return $this->defaultFont;
-  }
-
-  /**
-   * Set the value of defaultFont
-   */
-  public function setDefaultFont($defaultFont): self
-  {
-    $this->defaultFont = $defaultFont;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of previousState
-   */
-  public function getPreviousState()
-  {
-    return $this->previousState;
-  }
-
-  /**
-   * Set the value of previousState
-   */
-  public function setPreviousState($previousState): self
-  {
-    $this->previousState = $previousState;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of states
-   */
-  public function getStates()
-  {
-    return $this->states;
-  }
-
-  /**
-   * Set the value of states
-   */
-  public function setStates($states): self
-  {
-    $this->states = $states;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of state
-   */
-  public function getState()
-  {
-    return $this->state;
-  }
-
-  /**
-   * Set the value of state
-   */
-  public function setState($state): self
-  {
-    $this->state = $state;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of openedTags
-   */
-  public function getOpenedTags()
-  {
-    return $this->openedTags;
-  }
-
-  /**
-   * Set the value of openedTags
-   */
-  public function setOpenedTags($openedTags): self
-  {
-    $this->openedTags = $openedTags;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of RTFencoding
-   */
-  public function getRTFencoding()
-  {
-    return $this->RTFencoding;
-  }
-
-  /**
-   * Set the value of RTFencoding
-   */
-  public function setRTFencoding($RTFencoding): self
-  {
-    $this->RTFencoding = $RTFencoding;
-
-    return $this;
   }
 }
 

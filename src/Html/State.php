@@ -1,19 +1,9 @@
 <?php 
 
 namespace RtfHtmlPhp\Html;
+
 class State
 {
-  private $bold;
-  private $italic;
-  private $underline;
-  private $strike;
-  private $hidden;
-  private $fontsize;
-  private $fontcolor;
-  private $background;
-  private $hcolor;
-  private $font;
-  
   public static $fonttbl = array();
   public static $colortbl = array();
   private static $highlight = array(
@@ -35,6 +25,18 @@ class State
       16 => 'LightGray'
   );
   
+  // PHP 8.2+ compatibility: Declare all dynamic properties
+  public $bold = false;
+  public $italic = false;
+  public $underline = false;
+  public $strike = false;
+  public $hidden = false;
+  public $fontsize = 0;
+  public $fontcolor = null;
+  public $background = null;
+  public $hcolor = null;
+  public $font = null;
+  
   public function __construct()
   {
     $this->Reset();
@@ -43,10 +45,9 @@ class State
   /* 
    * Store a font in the font table at the specified index.
    */
-  public static function setFontInFontTable(int $index, Font $font) {
+  public static function SetFont(int $index, Font $font) {
     State::$fonttbl[$index] = $font;
   }
-
 
   public function Reset($defaultFont = null)
   {
@@ -60,7 +61,6 @@ class State
     $this->background = null;
     $this->hcolor = null;
     $this->font = isset($defaultFont) ? $defaultFont : null;
-    $this->href = null;
   }
   
   public function PrintStyle()
@@ -123,189 +123,6 @@ class State
     // Compare fonts
     if ($this->font != $state->font) return false;
     
-    // Compare urls
-    if ($this->href != $state->href) return false;
-    
     return true;
-  }
-
-  /**
-   * Get the value of bold
-   */
-  public function getBold()
-  {
-    return $this->bold;
-  }
-
-  /**
-   * Set the value of bold
-   */
-  public function setBold($bold): self
-  {
-    $this->bold = $bold;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of italic
-   */
-  public function getItalic()
-  {
-    return $this->italic;
-  }
-
-  /**
-   * Set the value of italic
-   */
-  public function setItalic($italic): self
-  {
-    $this->italic = $italic;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of underline
-   */
-  public function getUnderline()
-  {
-    return $this->underline;
-  }
-
-  /**
-   * Set the value of underline
-   */
-  public function setUnderline($underline): self
-  {
-    $this->underline = $underline;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of strike
-   */
-  public function getStrike()
-  {
-    return $this->strike;
-  }
-
-  /**
-   * Set the value of strike
-   */
-  public function setStrike($strike): self
-  {
-    $this->strike = $strike;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of hidden
-   */
-  public function getHidden()
-  {
-    return $this->hidden;
-  }
-
-  /**
-   * Set the value of hidden
-   */
-  public function setHidden($hidden): self
-  {
-    $this->hidden = $hidden;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of fontsize
-   */
-  public function getFontsize()
-  {
-    return $this->fontsize;
-  }
-
-  /**
-   * Set the value of fontsize
-   */
-  public function setFontsize($fontsize): self
-  {
-    $this->fontsize = $fontsize;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of fontcolor
-   */
-  public function getFontcolor()
-  {
-    return $this->fontcolor;
-  }
-
-  /**
-   * Set the value of fontcolor
-   */
-  public function setFontcolor($fontcolor): self
-  {
-    $this->fontcolor = $fontcolor;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of background
-   */
-  public function getBackground()
-  {
-    return $this->background;
-  }
-
-  /**
-   * Set the value of background
-   */
-  public function setBackground($background): self
-  {
-    $this->background = $background;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of hcolor
-   */
-  public function getHcolor()
-  {
-    return $this->hcolor;
-  }
-
-  /**
-   * Set the value of hcolor
-   */
-  public function setHcolor($hcolor): self
-  {
-    $this->hcolor = $hcolor;
-
-    return $this;
-  }
-
-  /**
-   * Get the value of font
-   */
-  public function getFont()
-  {
-    return $this->font;
-  }
-
-  /**
-   * Set the value of font
-   */
-  public function setFont($font): self
-  {
-    $this->font = $font;
-
-    return $this;
   }
 }
