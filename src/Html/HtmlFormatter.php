@@ -13,6 +13,7 @@ class HtmlFormatter
   private $states = [];          // PHP 8.2+ compatibility
   private $state = null;         // PHP 8.2+ compatibility
   private $openedTags = [];      // PHP 8.2+ compatibility
+  private $RTFencoding = null;   // PHP 8.2+ compatibility
 
   // By default, HtmlFormatter uses HTML_ENTITIES for code conversion.
   // You can optionally support a different endoing when creating
